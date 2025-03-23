@@ -2,7 +2,7 @@
 
 namespace Keycloak.Net.Sdk.Contracts;
 
-public interface IAdminClient
+public interface IKeycloakAdminClient
 {
     Task<KeycloakBaseResponse> SignupAsync(string username, string password, CancellationToken cancellationToken);
     Task<KeycloakBaseResponse<SigninResponseDto>> SigninAsync(string username, 
