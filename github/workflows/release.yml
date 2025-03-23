@@ -2,8 +2,10 @@ name: Publish to NuGet
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - 'v*'
+      - 'v*' 
 
 jobs:
   deploy:
@@ -16,7 +18,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x' 
+          dotnet-version: '8.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
