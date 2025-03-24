@@ -6,6 +6,7 @@ using System.Text.Json;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Requests;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
@@ -19,7 +20,8 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
     private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
 
     public KeycloakAdminClient(HttpClient httpClient,
-        IOptions<KeycloakConfiguration> keycloakOptions)
+        IOptions<KeycloakConfiguration> keycloakOptions,
+        ILogger logger)
     {
         _httpClient = httpClient;
         _keyCloakConfiguration = keycloakOptions.Value;
@@ -28,13 +30,9 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
             .Handle<HttpRequestException>()
             .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
             .WaitAndRetryAsync(
-                retryCount: 3, // Number of retries
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(2), // Delay between each retry
-                onRetry: (outcome, timespan, retryAttempt, context) =>
-                {
-                    Console.WriteLine(
-                        $"Retry {retryAttempt} after {timespan.TotalSeconds} seconds due to: {outcome.Exception?.Message ?? outcome.Result.ReasonPhrase}");
-                });
+                retryCount: keycloakOptions.Value.NumberOfRetries, // Number of retries
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(keycloakOptions.Value.DelayBetweenRetryRequestsInSeconds), // Delay between each retry
+                onRetry: (outcome, timespan, retryAttempt, context) => { logger.LogWarning($"Retry {retryAttempt} after {timespan.TotalSeconds} seconds due to: {outcome.Exception?.Message ?? outcome.Result.ReasonPhrase}"); });
 
 
         var adminToken = GetAdminTokenAsync()
@@ -42,8 +40,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
             .GetResult();
 
         if (adminToken.IsSuccessful)
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", adminToken.Response!.AccessToken);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken.Response!.AccessToken);
         else
             throw new AuthenticationException("Failed to authenticate to Keycloak");
     }
@@ -63,8 +60,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var requestContent = new FormUrlEncodedContent(requestData);
 
-        var response = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.PostAsync(uri, requestContent));
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.PostAsync(uri, requestContent));
 
         return await HandleResponse<SigninResponseDto>(response);
     }
@@ -79,23 +75,17 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var request = new HttpRequestMessage(HttpMethod.Post, uri)
         {
-            Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(signupRequestDto),
-                Encoding.UTF8,
-                "application/json")
+            Content = new StringContent(JsonSerializer.Serialize(signupRequestDto), Encoding.UTF8, "application/json")
         };
 
-        var signupResponse = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request, cancellationToken));
+        var signupResponse = await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request, cancellationToken));
 
-        if (!signupResponse.IsSuccessStatusCode)
-            return new KeycloakFailureResponse<UserInfoResponseDto>(signupResponse.StatusCode,
-                signupResponse.ReasonPhrase);
-
-        return new KeycloakBaseResponse(true, HttpStatusCode.OK);
+        return !signupResponse.IsSuccessStatusCode 
+            ? new KeycloakFailureResponse<UserInfoResponseDto>(signupResponse.StatusCode, signupResponse.ReasonPhrase) 
+            : new KeycloakBaseResponse(true, HttpStatusCode.OK);
     }
 
-    public async Task<KeycloakBaseResponse<SigninResponseDto>> SigninAsync(string username, string password,
-        CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse<SigninResponseDto>> SigninAsync(string username, string password, CancellationToken cancellationToken = default)
     {
         _httpClient.DefaultRequestHeaders.Authorization = null;
 
@@ -112,9 +102,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var requestContent = new FormUrlEncodedContent(requestData);
 
-        var response = await _httpClient.PostAsync(uri, requestContent, cancellationToken);
-        // var response = await _retryPolicy
-        //     .ExecuteAsync(async () => await _httpClient.PostAsync(uri, requestContent, cancellationToken));
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.PostAsync(uri, requestContent, cancellationToken));
 
         return await HandleResponse<SigninResponseDto>(response);
     }
@@ -134,7 +122,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var requestContent = new FormUrlEncodedContent(requestData);
 
-        var response = await _httpClient.PostAsync(uri, requestContent, cancellationToken);
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.PostAsync(uri, requestContent, cancellationToken));
 
         return await HandleResponse<SigninResponseDto>(response);
     }
@@ -144,8 +132,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var requestUrl = $"admin/realms/{_keyCloakConfiguration.RealmName}/users/{id}";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-        var response = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request));
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request));
 
         return await HandleResponse<UserInfoResponseDto>(response);
     }
@@ -156,8 +143,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var uri = $"admin/realms/{_keyCloakConfiguration.RealmName}/users?username={username}";
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
-        var response = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request, cancellationToken));
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request, cancellationToken));
 
         return await HandleResponse<List<UserInfoResponseDto>>(response);
     }
@@ -167,19 +153,17 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var requestUrl = $"/admin/realms/{_keyCloakConfiguration.RealmName}/client-scopes";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-        var response = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request));
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request));
 
         return await HandleResponse<List<ClientScopeResponseDto>>(response);
     }
 
     public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoles()
     {
-        var requestUrl = $"/admin/realms/{_keyCloakConfiguration.RealmName}" +
-                         $"/clients/{_keyCloakConfiguration.ClientUuid}/roles";
+        var requestUrl = $"/admin/realms/{_keyCloakConfiguration.RealmName}/clients/{_keyCloakConfiguration.ClientUuid}/roles";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-        var response = await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request));
+        
+        var response = await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request));
 
         return await HandleResponse<List<ClientRoleResponseDto>>(response);
     }
@@ -188,9 +172,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         string roleId,
         string roleName)
     {
-        var requestUrl = $"/admin/realms/{_keyCloakConfiguration.RealmName}/" +
-                         $"users/{userId}/role-mappings/" +
-                         $"clients/{_keyCloakConfiguration.ClientUuid}";
+        var requestUrl = $"/admin/realms/{_keyCloakConfiguration.RealmName}/users/{userId}/role-mappings/clients/{_keyCloakConfiguration.ClientUuid}";
 
         var roles = new[]
         {
@@ -206,8 +188,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
             Content = new StringContent(JsonSerializer.Serialize(roles), Encoding.UTF8, "application/json")
         };
 
-        await _retryPolicy
-            .ExecuteAsync(async () => await _httpClient.SendAsync(request));
+        await _retryPolicy.ExecuteAsync(async () => await _httpClient.SendAsync(request));
     }
 
     public async Task<KeycloakBaseResponse> CreateRealmAsync(string realmName)
@@ -215,9 +196,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var adminToken = await GetKeycloakAdminTokenAsync();
 
         if (!adminToken.IsSuccessful)
-            throw new KeycloakException(_keyCloakConfiguration.ClientId,
-                _keyCloakConfiguration.RealmName,
-                "could not get keycloak's admin token");
+            throw new KeycloakException(_keyCloakConfiguration.ClientId, _keyCloakConfiguration.RealmName, "could not get keycloak's admin token");
 
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization =
@@ -232,7 +211,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var json = JsonSerializer.Serialize(realmData);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync($"{_keyCloakConfiguration.ServerUrl}/admin/realms", content);
+        var response =await _retryPolicy.ExecuteAsync(async () => await client.PostAsync($"{_keyCloakConfiguration.ServerUrl}/admin/realms", content));
 
         return !response.IsSuccessStatusCode
             ? new KeycloakFailureResponse(response.StatusCode)
@@ -264,9 +243,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
             { "password", _keyCloakConfiguration.AdminPassword }
         };
 
-        var response = await client
-            .PostAsync($"{_keyCloakConfiguration.ServerUrl}/realms/master/protocol/openid-connect/token",
-                new FormUrlEncodedContent(parameters));
+        var response = await client.PostAsync($"{_keyCloakConfiguration.ServerUrl}/realms/master/protocol/openid-connect/token", new FormUrlEncodedContent(parameters));
 
         return await HandleResponse<SigninResponseDto>(response);
     }
