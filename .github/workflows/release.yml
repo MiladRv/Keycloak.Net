@@ -1,16 +1,35 @@
-name: Publish to NuGet
+name: Build and Publish
 
 on:
   push:
     branches:
-      - main 
+      - main
+      - develop
     tags:
       - 'v*' 
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')  # فقط وقتی که یک تگ منتشر بشه
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
