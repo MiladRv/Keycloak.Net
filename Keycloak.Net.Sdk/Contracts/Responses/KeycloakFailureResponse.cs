@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Contracts.Responses;
 
 public sealed record KeycloakFailureResponse(HttpStatusCode StatusCode, string? ErrorMessage = null)
     : KeycloakBaseResponse(false, StatusCode, ErrorMessage);

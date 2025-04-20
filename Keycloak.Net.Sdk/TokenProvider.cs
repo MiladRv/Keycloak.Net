@@ -4,13 +4,22 @@ using Microsoft.Extensions.Options;
 
 namespace Keycloak.Net.Sdk;
 
-public sealed class TokenProvider(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keycloakConfiguration)
-    : ITokenProvider
+public sealed class TokenProvider : ITokenProvider
 {
-    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("Keycloak");
+    private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private string? _token;
     private DateTime _expiresAt;
+    private readonly IOptions<KeycloakConfiguration> _keycloakConfiguration;
+
+    public TokenProvider(IOptions<KeycloakConfiguration> keycloakConfiguration)
+    {
+        _keycloakConfiguration = keycloakConfiguration;
+        _httpClient = new HttpClient()
+        {
+            BaseAddress = new Uri(keycloakConfiguration.Value.ServerUrl)
+        };
+    }
 
     public async Task<string> GetTokenAsync()
     {
@@ -39,12 +48,12 @@ public sealed class TokenProvider(IHttpClientFactory httpClientFactory, IOptions
 
     private async Task<KeycloakBaseResponse<SigninResponseDto>> GetAdminTokenAsync()
     {
-        var uri = $"realms/{keycloakConfiguration.Value.RealmName}/protocol/openid-connect/token";
+        var uri = $"realms/{_keycloakConfiguration.Value.RealmName}/protocol/openid-connect/token";
 
         var requestData = new Dictionary<string, string>
         {
-            { "client_id", keycloakConfiguration.Value.ClientId },
-            { "client_secret", keycloakConfiguration.Value.ClientSecret },
+            { "client_id", _keycloakConfiguration.Value.ClientId },
+            { "client_secret", _keycloakConfiguration.Value.ClientSecret },
             { "grant_type", "client_credentials" }
         };
 
