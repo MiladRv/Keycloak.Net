@@ -19,7 +19,7 @@ public static class ServiceRegistrations
     public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration)
     {
         // Bind options
-        services.Configure<KeycloakConfiguration>(configuration.GetSection("Keycloak"));
+        services.Configure<KeycloakConfiguration>(configuration.GetSection("keycloak"));
         var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>();
 
         // Register TokenCache

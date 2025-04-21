@@ -9,7 +9,7 @@ public class PollyExtensions
 {
     internal static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(IConfiguration configuration)
     {
-        var keycloakOptions = configuration.GetSection("Keycloak").Get<KeycloakConfiguration>()!;
+        var keycloakOptions = configuration.GetSection("keycloak").Get<KeycloakConfiguration>()!;
 
         return Policy
             .Handle<HttpRequestException>()
