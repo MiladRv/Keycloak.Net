@@ -5,8 +5,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.3</Version>
-        <Authors>MiladRv</Authors>
+        <Version>1.1.0</Version>
+        <Authors>Milad.Rv</Authors>
+        <Title>Keycloak.Net.Sdk</Title>
+        <RepositoryUrl>https://github.com/MiladRv/Keycloak.Net</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>
