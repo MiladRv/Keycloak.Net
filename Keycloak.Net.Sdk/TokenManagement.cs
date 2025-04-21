@@ -8,7 +8,6 @@ public class TokenManagement(IHttpClientFactory httpClientFactory, IOptions<Keyc
     : ITokenManagement
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
-
     public async Task<KeycloakBaseResponse<SigninResponseDto>> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"realms/{keyCloakConfiguration.Value.RealmName}/protocol/openid-connect/token", UriKind.Relative);

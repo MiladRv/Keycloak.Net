@@ -8,9 +8,8 @@ namespace Keycloak.Net.Sdk;
 public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : IClientManagement
 {
-    // private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
-    private readonly HttpClient _httpClient = null;
     public async Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopes()
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes";

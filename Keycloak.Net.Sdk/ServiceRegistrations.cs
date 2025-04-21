@@ -12,7 +12,7 @@ public static class ServiceRegistrations
     {
         // Bind options
         services.Configure<KeycloakConfiguration>(configuration.GetSection("Keycloak"));
-        var options = configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
+        var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>();
 
         // Register TokenCache
         services.AddSingleton<ITokenProvider, TokenProvider>();
@@ -21,17 +21,17 @@ public static class ServiceRegistrations
         services.AddTransient<KeycloakAuthHandler>();
 
         // Register HttpClient with Polly + DelegatingHandler
-        services.AddHttpClient("Keycloak", client => { client.BaseAddress = new Uri(options.ServerUrl); })
+        services.AddHttpClient("keycloak", client => { client.BaseAddress = new Uri(options.ServerUrl); })
             .AddPolicyHandler(GetRetryPolicy(configuration))
             .AddHttpMessageHandler<KeycloakAuthHandler>();
 
         // Register managers
-        services.AddSingleton<IKeycloakManagement, KeycloakManagement>();
-        services.AddSingleton<IUserManagement, UserManagement>();
-        services.AddSingleton<ITokenManagement, TokenManagement>();
-        services.AddSingleton<IRoleManagement, RoleManagement>();
-        services.AddSingleton<IRealmManagement, RealmManagement>();
-        services.AddSingleton<IClientManagement, ClientManagement>();
+        services.AddScoped<IKeycloakManagement, KeycloakManagement>();
+        services.AddScoped<IUserManagement, UserManagement>();
+        services.AddScoped<ITokenManagement, TokenManagement>();
+        services.AddScoped<IRoleManagement, RoleManagement>();
+        services.AddScoped<IRealmManagement, RealmManagement>();
+        services.AddScoped<IClientManagement, ClientManagement>();
 
 
         return services;
