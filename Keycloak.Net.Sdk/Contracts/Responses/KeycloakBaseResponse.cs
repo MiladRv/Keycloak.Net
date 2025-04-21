@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Contracts.Responses;
 
 public record KeycloakBaseResponse<T>(
     T Response,

@@ -15,18 +15,28 @@ public sealed record SignupRequestDto
     [JsonPropertyName("enabled")]
     public bool Enabled { get; init; } = true;
     [JsonPropertyName("credentials")]
-    public object[] Credentials;
+    public CredentialDto[] Credentials { get; init; }
 
     public SignupRequestDto(string Username , string password)
     {
         this.Username = Username;
         Credentials = [
-            new
+            new CredentialDto
             {
-                type = "password",
-                value = password,
-                temporary = false // Set to true if you want the user to change the password on first login
+                Type = "password",
+                Value = password,
+                Temporary = false // Set to true if you want the user to change the password on first login
             }
         ];
+    }
+    
+    public sealed record CredentialDto
+    {
+        [JsonPropertyName("type")]
+        public required string Type { get; init; }
+        [JsonPropertyName("value")]
+        public required string Value { get; init; }
+        [JsonPropertyName("temporary")]
+        public bool Temporary { get; init; }
     }
 }

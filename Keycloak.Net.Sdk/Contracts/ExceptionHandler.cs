@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Keycloak.Net.Sdk.Contracts.Responses;
 
 namespace Keycloak.Net.Sdk.Contracts;
 
@@ -15,5 +16,12 @@ internal static class ExceptionHandler
         var deserializedResponse = JsonSerializer.Deserialize<T>(responseContent)!;
 
         return new KeycloakSuccessResponse<T>(deserializedResponse);
+    }
+
+    public static async Task<KeycloakBaseResponse> HandleResponseAsync(this HttpResponseMessage response)
+    {
+        return !response.IsSuccessStatusCode
+            ? new KeycloakFailureResponse(response.StatusCode, response.ReasonPhrase)
+            : new KeycloakSuccessResponse();
     }
 }
