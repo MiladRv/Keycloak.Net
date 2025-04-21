@@ -3,7 +3,6 @@ using System.Text.Json;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Microsoft.Extensions.Options;
-using Polly.Retry;
 
 namespace Keycloak.Net.Sdk;
 
@@ -22,7 +21,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<ClientRoleResponseDto>>();
     }
 
-    public async Task AssignRoleToUser(string userId, string roleId, string roleName)
+    public async Task<KeycloakBaseResponse> AssignClientRoleToUser(string userId, string roleId, string roleName)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}";
 
@@ -40,6 +39,31 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
             Content = new StringContent(JsonSerializer.Serialize(roles), Encoding.UTF8, "application/json")
         };
 
-        await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request);
+
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> RemoveClientRoleFromUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
+    {
+        var requestUrl = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}", UriKind.Relative);
+
+        var roles = new[]
+        {
+            new
+            {
+                id = roleId,
+                name = roleName
+            }
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, requestUrl)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(roles), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        return await response.HandleResponseAsync();
     }
 }
