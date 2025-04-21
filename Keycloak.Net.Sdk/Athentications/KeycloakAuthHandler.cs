@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
-using Keycloak.Net.Sdk.Contracts;
+using Keycloak.Net.Sdk.Athentications.Contracts;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Athentications;
 
 public class KeycloakAuthHandler(ITokenProvider tokenProvider) : DelegatingHandler
 {

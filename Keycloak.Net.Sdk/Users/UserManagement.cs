@@ -1,11 +1,13 @@
 using System.Text;
 using System.Text.Json;
-using Keycloak.Net.Sdk.Contracts;
-using Keycloak.Net.Sdk.Contracts.Requests;
+using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Keycloak.Net.Sdk.Extensions;
+using Keycloak.Net.Sdk.Users.Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Users;
 
 public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : IUserManagement
@@ -70,11 +72,10 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/reset-password", UriKind.Relative);
 
-        var passwordPayload = new
+        var passwordPayload = new SetUserPasswordRequestDto()
         {
-            type = "password",
-            value = password,
-            temporary
+            Value = password,
+            Temporary = temporary
         };
 
         var request = new HttpRequestMessage(HttpMethod.Put, uri)

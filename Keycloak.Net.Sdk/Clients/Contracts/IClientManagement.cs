@@ -1,7 +1,6 @@
-using Keycloak.Net.Sdk.Contracts.Requests;
 using Keycloak.Net.Sdk.Contracts.Responses;
 
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Clients.Contracts;
 
 public interface IClientManagement
 {

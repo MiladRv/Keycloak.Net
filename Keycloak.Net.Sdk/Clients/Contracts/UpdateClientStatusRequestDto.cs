@@ -1,4 +1,4 @@
-namespace Keycloak.Net.Sdk.Contracts.Requests;
+namespace Keycloak.Net.Sdk.Clients.Contracts;
 
 public sealed record UpdateClientStatusRequestDto()
 {
