@@ -10,7 +10,7 @@ namespace Keycloak.Net.Sdk;
 public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : IUserManagement
 {
-    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("Keycloak");
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
     public async Task<KeycloakBaseResponse> SignupAsync(SignupRequestDto requestDto, CancellationToken cancellationToken = default)
     {
@@ -65,4 +65,51 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
+    
+    public async Task SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/reset-password", UriKind.Relative);
+
+        var passwordPayload = new
+        {
+            type = "password",
+            value = password,
+            temporary
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(passwordPayload), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+    
+    public async Task DeleteUserAsync(string userId, CancellationToken cancellation = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
+        var response = await _httpClient.DeleteAsync(uri, cancellation);
+        response.EnsureSuccessStatusCode();
+    }
+    
+    public async Task EnableUserAsync(string userId) => await UpdateUserEnabledStatus(userId, true);
+
+    public async Task DisableUserAsync(string userId) => await UpdateUserEnabledStatus(userId, false);
+
+    private async Task UpdateUserEnabledStatus(string userId, bool enabled)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
+        var payload = new { enabled };
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+    
+ 
 }
