@@ -1,10 +1,18 @@
-using System.Net;
+using Keycloak.Net.Sdk.Athentications;
+using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Clients;
+using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Contracts;
+using Keycloak.Net.Sdk.Extensions;
+using Keycloak.Net.Sdk.Realms;
+using Keycloak.Net.Sdk.Roles;
+using Keycloak.Net.Sdk.Roles.Contracts;
+using Keycloak.Net.Sdk.Users;
+using Keycloak.Net.Sdk.Users.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Polly;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Configurations;
 
 public static class ServiceRegistrations
 {
@@ -22,7 +30,7 @@ public static class ServiceRegistrations
 
         // Register HttpClient with Polly + DelegatingHandler
         services.AddHttpClient("keycloak", client => { client.BaseAddress = new Uri(options.ServerUrl); })
-            .AddPolicyHandler(GetRetryPolicy(configuration))
+            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration))
             .AddHttpMessageHandler<KeycloakAuthHandler>();
 
         // Register managers
@@ -37,21 +45,5 @@ public static class ServiceRegistrations
         return services;
     }
 
-    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(IConfiguration configuration)
-    {
-        var keycloakOptions = configuration.GetSection("Keycloak").Get<KeycloakConfiguration>()!;
-
-        return Policy
-            .Handle<HttpRequestException>()
-            .OrResult<HttpResponseMessage>(r =>
-                    r.StatusCode == HttpStatusCode.RequestTimeout || // 408
-                    r.StatusCode == HttpStatusCode.InternalServerError || // 500
-                    r.StatusCode == HttpStatusCode.BadGateway || // 502
-                    r.StatusCode == HttpStatusCode.ServiceUnavailable || // 503
-                    r.StatusCode == HttpStatusCode.GatewayTimeout // 504
-            )
-            .WaitAndRetryAsync(
-                retryCount: keycloakOptions.NumberOfRetries, // Number of retries
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(keycloakOptions.DelayBetweenRetryRequestsInSeconds)); // Delay between each retry
-    }
+  
 }

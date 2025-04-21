@@ -1,4 +1,4 @@
-﻿namespace Keycloak.Net.Sdk.Contracts;
+﻿namespace Keycloak.Net.Sdk.Configurations;
 
 public sealed record KeycloakConfiguration
 {

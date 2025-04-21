@@ -1,4 +1,4 @@
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Athentications.Contracts;
 
 public interface ITokenProvider
 {

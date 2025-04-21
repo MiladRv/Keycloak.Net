@@ -1,8 +1,10 @@
-using Keycloak.Net.Sdk.Contracts;
+using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Athentications;
 
 public class TokenManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : ITokenManagement

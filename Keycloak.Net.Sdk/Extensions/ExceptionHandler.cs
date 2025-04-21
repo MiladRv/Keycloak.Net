@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Keycloak.Net.Sdk.Contracts.Responses;
 
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Extensions;
 
 internal static class ExceptionHandler
 {

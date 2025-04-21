@@ -1,4 +1,10 @@
-﻿namespace Keycloak.Net.Sdk.Contracts;
+﻿using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Clients.Contracts;
+using Keycloak.Net.Sdk.Realms;
+using Keycloak.Net.Sdk.Roles.Contracts;
+using Keycloak.Net.Sdk.Users.Contracts;
+
+namespace Keycloak.Net.Sdk.Contracts;
 
 public interface IKeycloakManagement
 {

@@ -1,6 +1,6 @@
 using Keycloak.Net.Sdk.Contracts.Responses;
 
-namespace Keycloak.Net.Sdk.Contracts;
+namespace Keycloak.Net.Sdk.Roles.Contracts;
 
 public interface IRoleManagement
 {

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Keycloak.Net.Sdk.Contracts.Responses;
+namespace Keycloak.Net.Sdk.Users.Contracts;
 
 public sealed record UserInfoResponseDto() 
 {

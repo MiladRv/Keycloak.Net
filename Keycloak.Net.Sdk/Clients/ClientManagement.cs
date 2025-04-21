@@ -1,11 +1,12 @@
 using System.Text;
 using System.Text.Json;
-using Keycloak.Net.Sdk.Contracts;
-using Keycloak.Net.Sdk.Contracts.Requests;
+using Keycloak.Net.Sdk.Clients.Contracts;
+using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Clients;
 
 public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : IClientManagement

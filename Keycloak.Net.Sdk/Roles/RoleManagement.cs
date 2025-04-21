@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json;
-using Keycloak.Net.Sdk.Contracts;
+using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Keycloak.Net.Sdk.Extensions;
+using Keycloak.Net.Sdk.Roles.Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Roles;
 
 public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : IRoleManagement

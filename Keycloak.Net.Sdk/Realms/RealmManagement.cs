@@ -2,13 +2,16 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
+using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
 
-namespace Keycloak.Net.Sdk;
+namespace Keycloak.Net.Sdk.Realms;
 
 public sealed class RealmManagement(IOptions<KeycloakConfiguration> keyCloakConfiguration) : IRealmManagement
 {
