@@ -1,15 +1,26 @@
-# Keycloak.Net
+# Keycloak.Net.Sdk
 
-**Keycloak.Net** is an open-source SDK designed to make integrating **Keycloak** with **.NET** applications easy and seamless. This SDK simplifies the process of authenticating and managing users with Keycloak in .NET-based projects.
+> 🧰 A powerful and modular .NET SDK for integrating with [Keycloak](https://www.keycloak.org/)
 
-## Features
+This SDK is designed to provide a clean, extensible, and testable interface to interact with Keycloak in .NET applications using `HttpClientFactory`, typed services, and native DTOs.
 
-- **Simple Integration**: Easily integrate **Keycloak** authentication into your **.NET** application.
-- **Support for Keycloak APIs**: Includes support for accessing Keycloak's user and realm management APIs.
-- **NuGet Package**: Ready-to-use **NuGet** package to quickly start using Keycloak in your projects.
-- **Ongoing Development**: This project will continue to improve and evolve with new features and updates.
+📦 NuGet: [Keycloak.Net.Sdk](https://www.nuget.org/packages/Keycloak.Net.Sdk)
 
-## Getting Started
+---
+
+## ✨ Features
+
+- Sign up / Sign in users  
+- Manage users (set password, enable/disable, delete)  
+- Manage roles (realm & client)  
+- Assign / remove roles to users  
+- Manage realms and clients  
+- Token-based authentication  
+- Built-in retry policy & auth handler  
+- Supports `HttpClientFactory` and dependency injection  
+
+---
+
 
 ### Prerequisites
 
@@ -18,16 +29,37 @@ Before using the **Keycloak.Net** SDK, ensure you have the following:
 - A **Keycloak** server running and accessible.
 - **.NET 8+** project setup.
 
-### Installation
+## ⚙️ Installation
 
-You can install the SDK via **NuGet**:
+```bash
+dotnet add package Keycloak.Net.Sdk
+```
 
-    dotnet add package Keycloak.Net
+## 🔧 Configuration 
 
-## License
+1- Add this config to your appsettings.json
 
-This project is licensed under the **MIT License** - see the LICENSE file for details.
+```
+  "keycloak": {
+    "ServerUrl": "keycloak service address",
+    "RealmName": "your realm name",
+    "ClientId": "your clientId",
+    "ClientSecret":"your clientSecret",
+    "AdminUsername": "master realm username",
+    "AdminPassword": "master realm password",
+    "NumberOfRetries": 3,
+    "DelayBetweenRetryRequestsInSeconds": 1
+  }
+```
+2- Register to DI
+```
+builder.Services.AddKeycloak(builder.Configuration);
+```
 
-## Contact
+### License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-For more information, questions, or feedback, you can reach out to me at **miladrivandi73@gmail.com** or open an issue in this repository.
+### Contact
+For more information, questions, or feedback, you can reach out to me at miladrivandi73@gmail.com or open an issue in this repository.
+
+
