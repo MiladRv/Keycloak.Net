@@ -8,19 +8,14 @@ using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
-using Polly;
-using Polly.Retry;
 
 namespace Keycloak.Net.Sdk.Realms;
 
-public sealed class RealmManagement(IOptions<KeycloakConfiguration> keyCloakConfiguration) : IRealmManagement
+public sealed class RealmManagement(
+    IHttpClientFactory httpClientFactory,
+    IOptions<KeycloakConfiguration> keyCloakConfiguration) : IRealmManagement
 {
-    private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy = Policy
-        .Handle<HttpRequestException>()
-        .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-        .WaitAndRetryAsync(
-            retryCount: keyCloakConfiguration.Value.NumberOfRetries, // Number of retries
-            sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(keyCloakConfiguration.Value.DelayBetweenRetryRequestsInSeconds));
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak-admin");
 
     public async Task<KeycloakBaseResponse> CreateRealmAsync(string realmName)
     {
@@ -29,29 +24,25 @@ public sealed class RealmManagement(IOptions<KeycloakConfiguration> keyCloakConf
         if (!adminToken.IsSuccessful)
             throw new KeycloakException(keyCloakConfiguration.Value.ClientId, keyCloakConfiguration.Value.RealmName, "could not get keycloak's admin token");
 
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken.Response.AccessToken);
-
         var realmData = new
         {
             realm = realmName,
             enabled = true
         };
 
-        var json = JsonSerializer.Serialize(realmData);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Post, "admin/realms")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(realmData), Encoding.UTF8, "application/json")
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken.Response.AccessToken);
 
-        var response = await _retryPolicy.ExecuteAsync(async () => await client.PostAsync($"{keyCloakConfiguration.Value.ServerUrl}/admin/realms", content));
+        var response = await _httpClient.SendAsync(request);
 
-        return !response.IsSuccessStatusCode
-            ? new KeycloakFailureResponse(response.StatusCode)
-            : new KeycloakBaseResponse(true, HttpStatusCode.OK);
+        return await response.HandleResponseAsync();
     }
 
     private async Task<KeycloakBaseResponse<SigninResponseDto>> GetKeycloakAdminTokenAsync()
     {
-        using var client = new HttpClient();
-
         var parameters = new Dictionary<string, string>
         {
             { "client_id", "admin-cli" },
@@ -60,7 +51,7 @@ public sealed class RealmManagement(IOptions<KeycloakConfiguration> keyCloakConf
             { "password", keyCloakConfiguration.Value.AdminPassword }
         };
 
-        var response = await client.PostAsync($"{keyCloakConfiguration.Value.ServerUrl}/realms/master/protocol/openid-connect/token", new FormUrlEncodedContent(parameters));
+        var response = await _httpClient.PostAsync("realms/master/protocol/openid-connect/token", new FormUrlEncodedContent(parameters));
 
         return await response.HandleResponseAsync<SigninResponseDto>();
     }

@@ -17,7 +17,6 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
     public async Task<KeycloakBaseResponse> SignupAsync(SignupRequestDto requestDto, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users", UriKind.Relative);
-        var a = JsonSerializer.Serialize(requestDto);
         var request = new HttpRequestMessage(HttpMethod.Post, uri)
         {
             Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
