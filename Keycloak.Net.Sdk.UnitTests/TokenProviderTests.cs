@@ -44,7 +44,7 @@ public class TokenProviderTests
         var second = await sut.GetTokenAsync();
 
         Assert.Equal(first, second);
-        // Only one HTTP call — second call hits the cache
+        // Only one HTTP call  second call hits the cache
         Assert.Single(handler.SentRequests);
     }
 
@@ -52,7 +52,7 @@ public class TokenProviderTests
     public async Task GetTokenAsync_ConcurrentCalls_FetchesTokenOnlyOnce()
     {
         var (factory, handler) = HttpClientFactoryHelper.Create();
-        // Add one response — if two requests are made concurrently, the second will throw
+        // Add one response  if two requests are made concurrently, the second will throw
         handler.AddResponse(HttpStatusCode.OK, TestData.SigninResponse);
         var sut = new TokenProvider(factory, _options);
 
