@@ -20,7 +20,8 @@ public static class ServiceRegistrations
     {
         // Bind options
         services.Configure<KeycloakConfiguration>(configuration.GetSection("keycloak"));
-        var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>();
+        var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>()
+            ?? throw new InvalidOperationException("Keycloak configuration section is missing. Add a 'keycloak' section to appsettings.json.");
 
         // Register TokenCache
         services.AddSingleton<ITokenProvider, TokenProvider>();

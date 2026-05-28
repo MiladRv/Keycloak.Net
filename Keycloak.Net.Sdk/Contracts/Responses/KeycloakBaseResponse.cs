@@ -11,9 +11,6 @@ public record KeycloakBaseResponse<T>(
     where T : class, new()
 {
     public T Response { get; protected init; } = Response;
-    public bool IsSuccessful { get; protected init; } = IsSuccessful;
-    public HttpStatusCode StatusCode { get; protected init; } = StatusCode;
-    public string? ErrorMessage { get; protected init; } = ErrorMessage;
 }
 
 public record KeycloakBaseResponse(

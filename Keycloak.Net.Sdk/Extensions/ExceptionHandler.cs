@@ -15,13 +15,13 @@ internal static class ExceptionHandler
 
         var deserializedResponse = JsonSerializer.Deserialize<T>(responseContent)!;
 
-        return new KeycloakSuccessResponse<T>(deserializedResponse);
+        return new KeycloakBaseResponse<T>(deserializedResponse, true, response.StatusCode);
     }
 
     public static async Task<KeycloakBaseResponse> HandleResponseAsync(this HttpResponseMessage response)
     {
         return !response.IsSuccessStatusCode
             ? new KeycloakFailureResponse(response.StatusCode, response.ReasonPhrase)
-            : new KeycloakSuccessResponse();
+            : new KeycloakBaseResponse(true, response.StatusCode);
     }
 }
