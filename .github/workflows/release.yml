@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Build, Test and Publish
 
 on:
   push:
@@ -6,47 +6,54 @@ on:
       - main
       - develop
     tags:
-      - 'v*' 
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
-  build:
+  test:
+    name: Build & Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      - name: Unit Tests
+        run: dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj --configuration Release --no-build --verbosity normal
+
   publish:
-    needs: build
+    name: Pack & Publish to NuGet
+    needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj --configuration Release --no-restore
 
       - name: Pack
-        run: dotnet pack --configuration Release --no-build
+        run: dotnet pack Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj --configuration Release --no-build --output ./nupkgs
 
       - name: Publish to NuGet
-        run: dotnet nuget push **/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
