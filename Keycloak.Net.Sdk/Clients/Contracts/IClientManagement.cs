@@ -1,0 +1,12 @@
+using Keycloak.Net.Sdk.Contracts.Responses;
+
+namespace Keycloak.Net.Sdk.Clients.Contracts;
+
+public interface IClientManagement
+{
+    Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopes(CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<List<ClientResponseDto>>> GetClientsAsync(CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> CreateClientAsync(CreateClientRequestDto requestDto, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> DeleteClientAsync(string clientId, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default);
+}

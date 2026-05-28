@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Keycloak.Net.Sdk.Contracts.Responses;
+namespace Keycloak.Net.Sdk.Clients.Contracts;
 
 public sealed record ClientScopeResponseDto
 {

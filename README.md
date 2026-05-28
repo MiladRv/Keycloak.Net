@@ -1,33 +1,166 @@
-# Keycloak.Net
+# Keycloak.Net.Sdk
 
-**Keycloak.Net** is an open-source SDK designed to make integrating **Keycloak** with **.NET** applications easy and seamless. This SDK simplifies the process of authenticating and managing users with Keycloak in .NET-based projects.
+A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) using `IHttpClientFactory`, typed services, and built-in retry policies.
+
+📦 [NuGet: Keycloak.Net.Sdk](https://www.nuget.org/packages/Keycloak.Net.Sdk)
+
+---
 
 ## Features
 
-- **Simple Integration**: Easily integrate **Keycloak** authentication into your **.NET** application.
-- **Support for Keycloak APIs**: Includes support for accessing Keycloak's user and realm management APIs.
-- **NuGet Package**: Ready-to-use **NuGet** package to quickly start using Keycloak in your projects.
-- **Ongoing Development**: This project will continue to improve and evolve with new features and updates.
+- Sign up / sign in users
+- Manage users (get, enable/disable, set password, delete)
+- Manage roles (get client roles, assign/remove roles)
+- Manage clients (get, create, delete, enable service accounts)
+- Manage client scopes
+- Manage realms
+- Token management (get service-account token, revoke token)
+- Built-in retry policy via Polly
+- Auth handler that automatically attaches Bearer tokens to requests
+- Fully supports `IHttpClientFactory` and dependency injection
 
-## Getting Started
+---
 
-### Prerequisites
+## Requirements
 
-Before using the **Keycloak.Net** SDK, ensure you have the following:
+- .NET 8+
+- A running Keycloak server (v21+)
+- A confidential client with **Service Accounts Enabled**
 
-- A **Keycloak** server running and accessible.
-- **.NET 8+** project setup.
+---
 
-### Installation
+## Installation
 
-You can install the SDK via **NuGet**:
+```bash
+dotnet add package Keycloak.Net.Sdk
+```
 
-    dotnet add package Keycloak.Net
+---
+
+## Configuration
+
+### 1. `appsettings.json`
+
+```json
+"keycloak": {
+  "ServerUrl": "https://your-keycloak-host/",
+  "RealmName": "your-realm",
+  "ClientId": "your-client-id",
+  "ClientSecret": "your-client-secret",
+  "ClientUuid": "your-client-uuid",
+  "AdminUsername": "admin",
+  "AdminPassword": "admin-password",
+  "NumberOfRetries": 3,
+  "DelayBetweenRetryRequestsInSeconds": 2
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ServerUrl` | Keycloak base URL (include trailing slash) |
+| `RealmName` | The realm your client belongs to |
+| `ClientId` | Client ID (used for service-account token requests) |
+| `ClientSecret` | Client secret |
+| `ClientUuid` | Client UUID (used in Admin API calls) |
+| `AdminUsername` | Master realm admin username (for realm management) |
+| `AdminPassword` | Master realm admin password |
+| `NumberOfRetries` | Polly retry count (default: 3) |
+| `DelayBetweenRetryRequestsInSeconds` | Delay between retries (default: 2) |
+
+### 2. Register Services
+
+```csharp
+builder.Services.AddKeycloak(builder.Configuration);
+```
+
+---
+
+## Usage
+
+Inject the interface you need:
+
+```csharp
+public class MyService(IUserManagement users, IRoleManagement roles)
+{
+    public async Task CreateAndAssignAsync()
+    {
+        var signup = await users.SignupAsync(new SignupRequestDto
+        {
+            Username  = "john.doe",
+            Email     = "john@example.com",
+            FirstName = "John",
+            LastName  = "Doe",
+            Password  = "Secret@123"
+        });
+
+        await roles.AssignClientRoleToUser(userId: signup.Response.Id, roleId: "role-uuid");
+    }
+}
+```
+
+### Available Interfaces
+
+| Interface | Responsibilities |
+|-----------|-----------------|
+| `IUserManagement` | Sign up, sign in, get user, enable/disable, set password, delete |
+| `IRoleManagement` | Get client roles, assign/remove roles to users |
+| `IClientManagement` | Get clients, get client scopes, create/delete client, enable service accounts |
+| `IRealmManagement` | Create realm |
+| `ITokenManagement` | Get service-account token, revoke token |
+
+---
+
+## Running Tests
+
+### Unit Tests
+
+Unit tests use a fake `HttpMessageHandler` — no external dependencies required.
+
+```bash
+dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
+```
+
+### Integration Tests
+
+Integration tests spin up a real Keycloak instance via [Testcontainers](https://dotnet.testcontainers.org/). **Docker must be running.**
+
+```bash
+dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj
+```
+
+> The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
+
+### All Tests
+
+```bash
+dotnet test
+```
+
+---
+
+## Project Structure
+
+```
+Keycloak.Net.Sdk/                  # SDK source
+├── Athentications/                # TokenProvider, TokenManagement, KeycloakAuthHandler
+├── Clients/                       # ClientManagement + DTOs
+├── Configurations/                # KeycloakConfiguration
+├── Contracts/                     # Shared response types (KeycloakBaseResponse)
+├── Extensions/                    # ServiceRegistrations, ExceptionHandler
+├── Realms/                        # RealmManagement
+├── Roles/                         # RoleManagement + DTOs
+└── Users/                         # UserManagement + DTOs
+
+Keycloak.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler)
+Keycloak.Net.Sdk.IntegrationTests/ # Integration tests (Testcontainers.Keycloak)
+```
+
+---
 
 ## License
 
-This project is licensed under the **MIT License** - see the LICENSE file for details.
+[MIT](LICENSE)
 
 ## Contact
 
-For more information, questions, or feedback, you can reach out to me at **miladrivandi73@gmail.com** or open an issue in this repository.
+Questions or feedback: [miladrivandi73@gmail.com](mailto:miladrivandi73@gmail.com) or open an issue.
