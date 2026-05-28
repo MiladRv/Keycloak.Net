@@ -8,19 +8,16 @@ namespace Keycloak.Net.Sdk.Athentications;
 
 public sealed class TokenProvider : ITokenProvider
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private string? _token;
     private DateTime _expiresAt;
     private readonly IOptions<KeycloakConfiguration> _keycloakConfiguration;
 
-    public TokenProvider(IOptions<KeycloakConfiguration> keycloakConfiguration)
+    public TokenProvider(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keycloakConfiguration)
     {
+        _httpClientFactory = httpClientFactory;
         _keycloakConfiguration = keycloakConfiguration;
-        _httpClient = new HttpClient()
-        {
-            BaseAddress = new Uri(keycloakConfiguration.Value.ServerUrl)
-        };
     }
 
     public async Task<string> GetTokenAsync()
@@ -38,7 +35,7 @@ public sealed class TokenProvider : ITokenProvider
             var response = await GetAdminTokenAsync();
 
             _token = response.Response.AccessToken;
-            _expiresAt = DateTime.UtcNow.AddSeconds(response.Response.ExpiresIn - 30); // make sure that token will be got before it be expired
+            _expiresAt = DateTime.UtcNow.AddSeconds(response.Response.ExpiresIn - 30);
 
             return _token!;
         }
@@ -50,6 +47,7 @@ public sealed class TokenProvider : ITokenProvider
 
     private async Task<KeycloakBaseResponse<SigninResponseDto>> GetAdminTokenAsync()
     {
+        var httpClient = _httpClientFactory.CreateClient("keycloak-token");
         var uri = $"realms/{_keycloakConfiguration.Value.RealmName}/protocol/openid-connect/token";
 
         var requestData = new Dictionary<string, string>
@@ -60,8 +58,7 @@ public sealed class TokenProvider : ITokenProvider
         };
 
         var requestContent = new FormUrlEncodedContent(requestData);
-
-        var response = await _httpClient.PostAsync(uri, requestContent);
+        var response = await httpClient.PostAsync(uri, requestContent);
 
         return await response.HandleResponseAsync<SigninResponseDto>();
     }

@@ -20,7 +20,8 @@ public static class ServiceRegistrations
     {
         // Bind options
         services.Configure<KeycloakConfiguration>(configuration.GetSection("keycloak"));
-        var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>();
+        var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>()
+            ?? throw new InvalidOperationException("Keycloak configuration section is missing. Add a 'keycloak' section to appsettings.json.");
 
         // Register TokenCache
         services.AddSingleton<ITokenProvider, TokenProvider>();
@@ -33,8 +34,12 @@ public static class ServiceRegistrations
             .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration))
             .AddHttpMessageHandler<KeycloakAuthHandler>();
 
-        // Register HttpClient for RealmManagement (no auth handler — uses master realm admin credentials)
+        // Register HttpClient for RealmManagement (no auth handler  uses master realm admin credentials)
         services.AddHttpClient("keycloak-admin", client => { client.BaseAddress = new Uri(options.ServerUrl); })
+            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
+
+        // Register HttpClient for TokenProvider (no auth handler  used to fetch service-account tokens)
+        services.AddHttpClient("keycloak-token", client => { client.BaseAddress = new Uri(options.ServerUrl); })
             .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
 
         // Register managers
