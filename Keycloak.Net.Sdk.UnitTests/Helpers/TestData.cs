@@ -77,4 +77,19 @@ public static class TestData
             }
         ]
         """;
+
+    public const string GroupId   = "group-id-abc";
+    public const string GroupName = "test-group";
+    public const string GroupPath = "/test-group";
+
+    public static string GroupResponse => $$"""
+        {
+            "id": "{{GroupId}}",
+            "name": "{{GroupName}}",
+            "path": "{{GroupPath}}",
+            "subGroups": []
+        }
+        """;
+
+    public static string GroupsResponse => $"[{GroupResponse}]";
 }

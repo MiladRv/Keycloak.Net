@@ -4,6 +4,8 @@ using Keycloak.Net.Sdk.Clients;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Extensions;
+using Keycloak.Net.Sdk.Groups;
+using Keycloak.Net.Sdk.Groups.Contracts;
 using Keycloak.Net.Sdk.Realms;
 using Keycloak.Net.Sdk.Roles;
 using Keycloak.Net.Sdk.Roles.Contracts;
@@ -49,7 +51,7 @@ public static class ServiceRegistrations
         services.AddScoped<IRoleManagement, RoleManagement>();
         services.AddScoped<IRealmManagement, RealmManagement>();
         services.AddScoped<IClientManagement, ClientManagement>();
-
+        services.AddScoped<IGroupManagement, GroupManagement>();
 
         return services;
     }
