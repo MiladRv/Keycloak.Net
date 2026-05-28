@@ -42,6 +42,18 @@ public class GroupManagementTests
     }
 
     [Fact]
+    public async Task CreateGroupAsync_SendsGroupNameInBody()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.Created);
+
+        await sut.CreateGroupAsync(new CreateGroupRequestDto { Name = TestData.GroupName });
+
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains(TestData.GroupName, body);
+    }
+
+    [Fact]
     public async Task CreateGroupAsync_Conflict_ReturnsFailureResponse()
     {
         var (sut, handler) = CreateSut();
@@ -68,6 +80,18 @@ public class GroupManagementTests
         Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
     }
 
+    [Fact]
+    public async Task DeleteGroupAsync_NotFound_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.DeleteGroupAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
     // ── GetGroupsAsync ────────────────────────────────────────────────────────
 
     [Fact]
@@ -83,6 +107,18 @@ public class GroupManagementTests
         Assert.Equal(TestData.GroupId, result.Response[0].Id);
         Assert.Equal(TestData.GroupName, result.Response[0].Name);
         Assert.Contains($"admin/realms/{TestData.RealmName}/groups", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetGroupsAsync_EmptyRealm_ReturnsEmptyList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, "[]");
+
+        var result = await sut.GetGroupsAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
     }
 
     // ── GetGroupAsync ─────────────────────────────────────────────────────────
@@ -129,6 +165,18 @@ public class GroupManagementTests
         Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
     }
 
+    [Fact]
+    public async Task AddUserToGroupAsync_Failure_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.AddUserToGroupAsync("nonexistent-user", TestData.GroupId);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
     // ── RemoveUserFromGroupAsync ──────────────────────────────────────────────
 
     [Fact]
@@ -142,6 +190,18 @@ public class GroupManagementTests
         Assert.True(result.IsSuccessful);
         Assert.Contains($"users/{TestData.UserId}/groups/{TestData.GroupId}", handler.SentRequests[0].RequestUri!.ToString());
         Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+    }
+
+    [Fact]
+    public async Task RemoveUserFromGroupAsync_Failure_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.RemoveUserFromGroupAsync("nonexistent-user", TestData.GroupId);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
     }
 
     // ── GetUserGroupsAsync ────────────────────────────────────────────────────
@@ -158,5 +218,29 @@ public class GroupManagementTests
         Assert.Single(result.Response);
         Assert.Equal(TestData.GroupId, result.Response[0].Id);
         Assert.Contains($"users/{TestData.UserId}/groups", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetUserGroupsAsync_UserNotFound_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.GetUserGroupsAsync("nonexistent-user");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUserGroupsAsync_UserWithNoGroups_ReturnsEmptyList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, "[]");
+
+        var result = await sut.GetUserGroupsAsync(TestData.UserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
     }
 }
