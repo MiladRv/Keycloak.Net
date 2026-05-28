@@ -17,9 +17,9 @@ public sealed class RealmManagement(
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak-admin");
 
-    public async Task<KeycloakBaseResponse> CreateRealmAsync(string realmName)
+    public async Task<KeycloakBaseResponse> CreateRealmAsync(string realmName, CancellationToken cancellationToken = default)
     {
-        var adminToken = await GetKeycloakAdminTokenAsync();
+        var adminToken = await GetKeycloakAdminTokenAsync(cancellationToken);
 
         if (!adminToken.IsSuccessful)
             throw new KeycloakException(keyCloakConfiguration.Value.ClientId, keyCloakConfiguration.Value.RealmName, "could not get keycloak's admin token");
@@ -36,12 +36,12 @@ public sealed class RealmManagement(
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken.Response.AccessToken);
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await response.HandleResponseAsync();
     }
 
-    private async Task<KeycloakBaseResponse<SigninResponseDto>> GetKeycloakAdminTokenAsync()
+    private async Task<KeycloakBaseResponse<SigninResponseDto>> GetKeycloakAdminTokenAsync(CancellationToken cancellationToken = default)
     {
         var parameters = new Dictionary<string, string>
         {
@@ -51,7 +51,7 @@ public sealed class RealmManagement(
             { "password", keyCloakConfiguration.Value.AdminPassword }
         };
 
-        var response = await _httpClient.PostAsync("realms/master/protocol/openid-connect/token", new FormUrlEncodedContent(parameters));
+        var response = await _httpClient.PostAsync("realms/master/protocol/openid-connect/token", new FormUrlEncodedContent(parameters), cancellationToken);
 
         return await response.HandleResponseAsync<SigninResponseDto>();
     }

@@ -28,8 +28,6 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<SigninResponseDto>> SigninAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        _httpClient.DefaultRequestHeaders.Authorization = null;
-
         var uri = new Uri($"realms/{keyCloakConfiguration.Value.RealmName}/protocol/openid-connect/token", UriKind.Relative);
 
         var requestData = new Dictionary<string, string>
@@ -41,13 +39,16 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
             { "grant_type", "password" }
         };
 
-        var requestContent = new FormUrlEncodedContent(requestData);
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new FormUrlEncodedContent(requestData)
+        };
 
-        var response = await _httpClient.PostAsync(uri, requestContent, cancellationToken);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync<SigninResponseDto>();
     }
 
-    public async Task<KeycloakBaseResponse<UserInfoResponseDto>> GetUserAsync(string id, CancellationToken cancellationToken)
+    public async Task<KeycloakBaseResponse<UserInfoResponseDto>> GetUserAsync(string id, CancellationToken cancellationToken = default)
     {
         var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{id}";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
@@ -66,12 +67,12 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
-    
+
     public async Task SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/reset-password", UriKind.Relative);
 
-        var passwordPayload = new SetUserPasswordRequestDto()
+        var passwordPayload = new SetUserPasswordRequestDto
         {
             Value = password,
             Temporary = temporary
@@ -85,19 +86,21 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
-    
-    public async Task DeleteUserAsync(string userId, CancellationToken cancellation = default)
+
+    public async Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
-        var response = await _httpClient.DeleteAsync(uri, cancellation);
+        var response = await _httpClient.DeleteAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
-    
-    public async Task EnableUserAsync(string userId) => await UpdateUserEnabledStatus(userId, true);
 
-    public async Task DisableUserAsync(string userId) => await UpdateUserEnabledStatus(userId, false);
+    public async Task EnableUserAsync(string userId, CancellationToken cancellationToken = default)
+        => await UpdateUserEnabledStatus(userId, true, cancellationToken);
 
-    private async Task UpdateUserEnabledStatus(string userId, bool enabled)
+    public async Task DisableUserAsync(string userId, CancellationToken cancellationToken = default)
+        => await UpdateUserEnabledStatus(userId, false, cancellationToken);
+
+    private async Task UpdateUserEnabledStatus(string userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
         var payload = new { enabled };
@@ -107,9 +110,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
             Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
         };
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
-    
- 
 }

@@ -13,17 +13,17 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
-    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoles()
+    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoles(CancellationToken cancellationToken = default)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await response.HandleResponseAsync<List<ClientRoleResponseDto>>();
     }
 
-    public async Task<KeycloakBaseResponse> AssignClientRoleToUser(string userId, string roleId, string roleName)
+    public async Task<KeycloakBaseResponse> AssignClientRoleToUser(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}";
 
@@ -41,7 +41,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
             Content = new StringContent(JsonSerializer.Serialize(roles), Encoding.UTF8, "application/json")
         };
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await response.HandleResponseAsync();
     }

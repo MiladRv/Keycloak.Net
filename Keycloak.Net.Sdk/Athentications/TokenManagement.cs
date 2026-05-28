@@ -9,7 +9,7 @@ namespace Keycloak.Net.Sdk.Athentications;
 public class TokenManagement(IHttpClientFactory httpClientFactory, IOptions<KeycloakConfiguration> keyCloakConfiguration)
     : ITokenManagement
 {
-    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
+    private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak-token");
     public async Task<KeycloakBaseResponse<SigninResponseDto>> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"realms/{keyCloakConfiguration.Value.RealmName}/protocol/openid-connect/token", UriKind.Relative);
