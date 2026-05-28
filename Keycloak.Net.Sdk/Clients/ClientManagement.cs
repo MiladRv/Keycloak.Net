@@ -58,13 +58,13 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
 
         var requestUrl = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
         
-        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        var request = new HttpRequestMessage(HttpMethod.Put, requestUrl)
         {
             Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
         };
-        
+
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        
+
         return await response.HandleResponseAsync();
     }
 

@@ -33,6 +33,10 @@ public static class ServiceRegistrations
             .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration))
             .AddHttpMessageHandler<KeycloakAuthHandler>();
 
+        // Register HttpClient for RealmManagement (no auth handler — uses master realm admin credentials)
+        services.AddHttpClient("keycloak-admin", client => { client.BaseAddress = new Uri(options.ServerUrl); })
+            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
+
         // Register managers
         services.AddScoped<IKeycloakManagement, KeycloakManagement>();
         services.AddScoped<IUserManagement, UserManagement>();
