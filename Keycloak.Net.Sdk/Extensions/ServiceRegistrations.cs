@@ -37,6 +37,10 @@ public static class ServiceRegistrations
         services.AddHttpClient("keycloak-admin", client => { client.BaseAddress = new Uri(options.ServerUrl); })
             .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
 
+        // Register HttpClient for TokenProvider (no auth handler — used to fetch service-account tokens)
+        services.AddHttpClient("keycloak-token", client => { client.BaseAddress = new Uri(options.ServerUrl); })
+            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
+
         // Register managers
         services.AddScoped<IKeycloakManagement, KeycloakManagement>();
         services.AddScoped<IUserManagement, UserManagement>();
