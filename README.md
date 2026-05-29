@@ -10,7 +10,8 @@ A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) 
 
 - Sign up / sign in users
 - Manage users (get, enable/disable, set password, delete)
-- Manage roles (get client roles, assign/remove roles)
+- Manage client roles (get, assign/remove to users)
+- Manage realm roles (get, create, delete, assign/remove to users and groups)
 - Manage clients (get, create, delete, enable service accounts)
 - Manage client scopes
 - Manage realms
@@ -99,6 +100,35 @@ public class MyService(IUserManagement users, IRoleManagement roles)
 }
 ```
 
+Use `IRoleManagement` for both client roles and realm roles:
+
+```csharp
+public class RoleService(IRoleManagement roles)
+{
+    // Realm role CRUD
+    public async Task CreateRealmRoleAsync()
+    {
+        await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
+        {
+            Name        = "admin",
+            Description = "Full access role"
+        });
+    }
+
+    // Assign a realm role to a user
+    public async Task AssignRealmRoleToUserAsync(string userId, string roleId, string roleName)
+    {
+        await roles.AssignRealmRoleToUserAsync(userId, roleId, roleName);
+    }
+
+    // Assign a realm role to a group
+    public async Task AssignRealmRoleToGroupAsync(string groupId, string roleId, string roleName)
+    {
+        await roles.AssignRealmRoleToGroupAsync(groupId, roleId, roleName);
+    }
+}
+```
+
 Or use `IGroupManagement` to organize users into groups:
 
 ```csharp
@@ -122,7 +152,7 @@ public class GroupService(IGroupManagement groups)
 | Interface | Responsibilities |
 |-----------|-----------------|
 | `IUserManagement` | Sign up, sign in, get user, enable/disable, set password, delete |
-| `IRoleManagement` | Get client roles, assign/remove roles to users |
+| `IRoleManagement` | Client roles: get, assign/remove to users. Realm roles: get, create, delete, assign/remove to users and groups |
 | `IClientManagement` | Get clients, get client scopes, create/delete client, enable service accounts |
 | `IRealmManagement` | Create realm |
 | `ITokenManagement` | Get service-account token, revoke token |
@@ -134,7 +164,7 @@ public class GroupService(IGroupManagement groups)
 
 ### Unit Tests
 
-Unit tests use a fake `HttpMessageHandler` — no external dependencies required.
+Unit tests use a fake `HttpMessageHandler`  no external dependencies required.
 
 ```bash
 dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
@@ -153,7 +183,7 @@ The fixture automatically handles the full setup sequence:
 2. Creates a dedicated test realm
 3. Creates a confidential client with service accounts
 4. Grants realm-admin role to the service account
-5. Creates a test user, test role, and test group
+5. Creates a test user, client role, realm role, and group
 
 > The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
 
