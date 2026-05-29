@@ -77,4 +77,35 @@ public static class TestData
             }
         ]
         """;
+
+    public const string GroupId   = "group-id-abc";
+    public const string GroupName = "test-group";
+    public const string GroupPath = "/test-group";
+
+    public static string GroupResponse => $$"""
+        {
+            "id": "{{GroupId}}",
+            "name": "{{GroupName}}",
+            "path": "{{GroupPath}}",
+            "subGroups": []
+        }
+        """;
+
+    public static string GroupsResponse => $"[{GroupResponse}]";
+
+    public const string RealmRoleId   = "realm-role-id-xyz";
+    public const string RealmRoleName = "test-realm-role";
+
+    public static string RealmRoleResponse => $$"""
+        {
+            "id": "{{RealmRoleId}}",
+            "name": "{{RealmRoleName}}",
+            "description": "Test realm role",
+            "composite": false,
+            "clientRole": false,
+            "containerId": "{{RealmName}}"
+        }
+        """;
+
+    public static string RealmRolesResponse => $"[{RealmRoleResponse}]";
 }

@@ -10,10 +10,12 @@ A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) 
 
 - Sign up / sign in users
 - Manage users (get, enable/disable, set password, delete)
-- Manage roles (get client roles, assign/remove roles)
+- Manage client roles (get, assign/remove to users)
+- Manage realm roles (get, create, delete, assign/remove to users and groups)
 - Manage clients (get, create, delete, enable service accounts)
 - Manage client scopes
 - Manage realms
+- Manage groups (create, delete, get, add/remove users)
 - Token management (get service-account token, revoke token)
 - Built-in retry policy via Polly
 - Auth handler that automatically attaches Bearer tokens to requests
@@ -98,15 +100,63 @@ public class MyService(IUserManagement users, IRoleManagement roles)
 }
 ```
 
+Use `IRoleManagement` for both client roles and realm roles:
+
+```csharp
+public class RoleService(IRoleManagement roles)
+{
+    // Realm role CRUD
+    public async Task CreateRealmRoleAsync()
+    {
+        await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
+        {
+            Name        = "admin",
+            Description = "Full access role"
+        });
+    }
+
+    // Assign a realm role to a user
+    public async Task AssignRealmRoleToUserAsync(string userId, string roleId, string roleName)
+    {
+        await roles.AssignRealmRoleToUserAsync(userId, roleId, roleName);
+    }
+
+    // Assign a realm role to a group
+    public async Task AssignRealmRoleToGroupAsync(string groupId, string roleId, string roleName)
+    {
+        await roles.AssignRealmRoleToGroupAsync(groupId, roleId, roleName);
+    }
+}
+```
+
+Or use `IGroupManagement` to organize users into groups:
+
+```csharp
+public class GroupService(IGroupManagement groups)
+{
+    public async Task AssignUserToGroupAsync(string userId, string groupId)
+    {
+        await groups.AddUserToGroupAsync(userId, groupId);
+    }
+
+    public async Task<List<GroupResponseDto>> GetUserGroupsAsync(string userId)
+    {
+        var result = await groups.GetUserGroupsAsync(userId);
+        return result.Response;
+    }
+}
+```
+
 ### Available Interfaces
 
 | Interface | Responsibilities |
 |-----------|-----------------|
 | `IUserManagement` | Sign up, sign in, get user, enable/disable, set password, delete |
-| `IRoleManagement` | Get client roles, assign/remove roles to users |
+| `IRoleManagement` | Client roles: get, assign/remove to users. Realm roles: get, create, delete, assign/remove to users and groups |
 | `IClientManagement` | Get clients, get client scopes, create/delete client, enable service accounts |
 | `IRealmManagement` | Create realm |
 | `ITokenManagement` | Get service-account token, revoke token |
+| `IGroupManagement` | Create/delete group, get groups, add/remove user from group, get user's groups |
 
 ---
 
@@ -114,7 +164,7 @@ public class MyService(IUserManagement users, IRoleManagement roles)
 
 ### Unit Tests
 
-Unit tests use a fake `HttpMessageHandler` — no external dependencies required.
+Unit tests use a fake `HttpMessageHandler`  no external dependencies required.
 
 ```bash
 dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
@@ -127,6 +177,13 @@ Integration tests spin up a real Keycloak instance via [Testcontainers](https://
 ```bash
 dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj
 ```
+
+The fixture automatically handles the full setup sequence:
+1. Starts a Keycloak container
+2. Creates a dedicated test realm
+3. Creates a confidential client with service accounts
+4. Grants realm-admin role to the service account
+5. Creates a test user, client role, realm role, and group
 
 > The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
 
@@ -147,6 +204,7 @@ Keycloak.Net.Sdk/                  # SDK source
 ├── Configurations/                # KeycloakConfiguration
 ├── Contracts/                     # Shared response types (KeycloakBaseResponse)
 ├── Extensions/                    # ServiceRegistrations, ExceptionHandler
+├── Groups/                        # GroupManagement + DTOs
 ├── Realms/                        # RealmManagement
 ├── Roles/                         # RoleManagement + DTOs
 └── Users/                         # UserManagement + DTOs

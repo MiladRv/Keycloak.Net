@@ -20,22 +20,26 @@ namespace Keycloak.Net.Sdk.IntegrationTests;
 ///   2. Create realm "sdk-integration"
 ///   3. Create confidential client with service accounts
 ///   4. Assign realm-admin role to service account → SDK can manage users/roles
-///   5. Create a test role inside the client
-///   6. Create a test user
+///   5. Create a test client role and a test realm role
+///   6. Create a test user and test group
 /// </summary>
 public class KeycloakFixture : IAsyncLifetime
 {
     private KeycloakContainer _container = null!;
 
     // ── Public state consumed by tests ────────────────────────────────────────
-    public IServiceProvider Services     { get; private set; } = null!;
-    public string           TestUserId   { get; private set; } = null!;
-    public string           TestRoleId   { get; private set; } = null!;
-    public const string     TestRoleName = "sdk-test-role";
-    public const string     TestUsername = "sdk-test-user";
-    public const string     TestPassword = "Test@1234";
-    public const string     Realm        = "sdk-integration";
-    public const string     SdkClientId  = "sdk-client";
+    public IServiceProvider Services          { get; private set; } = null!;
+    public string           TestUserId        { get; private set; } = null!;
+    public string           TestRoleId        { get; private set; } = null!;
+    public string           TestGroupId       { get; private set; } = null!;
+    public string           TestRealmRoleId   { get; private set; } = null!;
+    public const string     TestRoleName      = "sdk-test-role";
+    public const string     TestRealmRoleName = "sdk-test-realm-role";
+    public const string     TestGroupName     = "sdk-test-group";
+    public const string     TestUsername      = "sdk-test-user";
+    public const string     TestPassword      = "Test@1234";
+    public const string     Realm             = "sdk-integration";
+    public const string     SdkClientId       = "sdk-client";
 
     private const string AdminUsername = "admin";
     private const string AdminPassword = "admin";
@@ -61,11 +65,13 @@ public class KeycloakFixture : IAsyncLifetime
         // 4. Give service account realm-admin role
         await AssignRealmAdminToServiceAccountAsync(http, adminToken, Realm, clientUuid, SdkClientId);
 
-        // 5. Create test role inside the client
-        TestRoleId = await CreateClientRoleAsync(http, adminToken, Realm, clientUuid, TestRoleName);
+        // 5. Create test client role and realm role
+        TestRoleId      = await CreateClientRoleAsync(http, adminToken, Realm, clientUuid, TestRoleName);
+        TestRealmRoleId = await CreateRealmRoleAsync(http, adminToken, Realm, TestRealmRoleName);
 
-        // 6. Create test user
-        TestUserId = await CreateTestUserAsync(http, adminToken, Realm, TestUsername, TestPassword);
+        // 6. Create test user and group
+        TestUserId  = await CreateTestUserAsync(http, adminToken, Realm, TestUsername, TestPassword);
+        TestGroupId = await CreateGroupAsync(http, adminToken, Realm, TestGroupName);
 
         // 7. Wire up the SDK
         var config = new KeycloakConfiguration
@@ -179,6 +185,20 @@ public class KeycloakFixture : IAsyncLifetime
         return json.RootElement.GetProperty("id").GetString()!;
     }
 
+    private static async Task<string> CreateRealmRoleAsync(
+        HttpClient http, string token, string realm, string roleName)
+    {
+        var req  = AuthorizedPost($"admin/realms/{realm}/roles", token, new { name = roleName, description = "SDK integration test realm role" });
+        var resp = await http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+
+        var getRoleReq  = AuthorizedGet($"admin/realms/{realm}/roles/{roleName}", token);
+        var getRoleResp = await http.SendAsync(getRoleReq);
+        getRoleResp.EnsureSuccessStatusCode();
+        var json = JsonDocument.Parse(await getRoleResp.Content.ReadAsStringAsync());
+        return json.RootElement.GetProperty("id").GetString()!;
+    }
+
     private static async Task<string> CreateTestUserAsync(
         HttpClient http, string token, string realm, string username, string password)
     {
@@ -189,6 +209,15 @@ public class KeycloakFixture : IAsyncLifetime
                 enabled = true,
                 credentials = new[] { new { type = "password", value = password, temporary = false } }
             });
+        var resp = await http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+        return resp.Headers.Location!.ToString().Split('/').Last();
+    }
+
+    private static async Task<string> CreateGroupAsync(
+        HttpClient http, string token, string realm, string groupName)
+    {
+        var req  = AuthorizedPost($"admin/realms/{realm}/groups", token, new { name = groupName });
         var resp = await http.SendAsync(req);
         resp.EnsureSuccessStatusCode();
         return resp.Headers.Location!.ToString().Split('/').Last();
