@@ -92,4 +92,20 @@ public static class TestData
         """;
 
     public static string GroupsResponse => $"[{GroupResponse}]";
+
+    public const string RealmRoleId   = "realm-role-id-xyz";
+    public const string RealmRoleName = "test-realm-role";
+
+    public static string RealmRoleResponse => $$"""
+        {
+            "id": "{{RealmRoleId}}",
+            "name": "{{RealmRoleName}}",
+            "description": "Test realm role",
+            "composite": false,
+            "clientRole": false,
+            "containerId": "{{RealmName}}"
+        }
+        """;
+
+    public static string RealmRolesResponse => $"[{RealmRoleResponse}]";
 }

@@ -301,3 +301,146 @@ public class GroupManagementIntegrationTests(KeycloakFixture fixture)
         Assert.DoesNotContain(result.Response, g => g.Id == fixture.TestGroupId);
     }
 }
+
+[Collection(nameof(KeycloakCollection))]
+public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
+{
+    private IRoleManagement  Role  => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IRoleManagement>();
+    private IGroupManagement Group => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IGroupManagement>();
+
+    // ── Read ──────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetRealmRolesAsync_ReturnsCreatedTestRole()
+    {
+        var result = await Role.GetRealmRolesAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.Contains(result.Response, r => r.Name == KeycloakFixture.TestRealmRoleName);
+        Assert.All(result.Response, r => Assert.False(r.ClientRole));
+    }
+
+    [Fact]
+    public async Task GetRealmRoleAsync_WithValidName_ReturnsSingleRole()
+    {
+        var result = await Role.GetRealmRoleAsync(KeycloakFixture.TestRealmRoleName);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(fixture.TestRealmRoleId, result.Response.Id);
+        Assert.Equal(KeycloakFixture.TestRealmRoleName, result.Response.Name);
+        Assert.False(result.Response.ClientRole);
+    }
+
+    [Fact]
+    public async Task GetRealmRoleAsync_WithInvalidName_ReturnsFailure()
+    {
+        var result = await Role.GetRealmRoleAsync("non-existent-role");
+
+        Assert.False(result.IsSuccessful);
+    }
+
+    // ── Create / Delete round-trip ────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAndDeleteRealmRoleAsync_WorksRoundTrip()
+    {
+        var roleName = $"temp-realm-role-{Guid.NewGuid():N}";
+
+        // Create
+        var created = await Role.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
+        {
+            Name        = roleName,
+            Description = "Temporary integration test role"
+        });
+        Assert.True(created.IsSuccessful);
+
+        // Verify it exists
+        var fetched = await Role.GetRealmRoleAsync(roleName);
+        Assert.True(fetched.IsSuccessful);
+        Assert.Equal(roleName, fetched.Response.Name);
+
+        // Delete
+        var deleted = await Role.DeleteRealmRoleAsync(roleName);
+        Assert.True(deleted.IsSuccessful);
+
+        // Verify it no longer exists
+        var afterDelete = await Role.GetRealmRoleAsync(roleName);
+        Assert.False(afterDelete.IsSuccessful);
+    }
+
+    // ── Realm Role ↔ User ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AssignAndRemoveRealmRoleToUser_WorksRoundTrip()
+    {
+        // Assign
+        var assign = await Role.AssignRealmRoleToUserAsync(
+            fixture.TestUserId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+        Assert.True(assign.IsSuccessful);
+
+        // Verify assignment
+        var userRoles = await Role.GetUserRealmRolesAsync(fixture.TestUserId);
+        Assert.True(userRoles.IsSuccessful);
+        Assert.Contains(userRoles.Response, r => r.Id == fixture.TestRealmRoleId);
+
+        // Remove
+        var remove = await Role.RemoveRealmRoleFromUserAsync(
+            fixture.TestUserId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+        Assert.True(remove.IsSuccessful);
+
+        // Verify removal
+        var after = await Role.GetUserRealmRolesAsync(fixture.TestUserId);
+        Assert.DoesNotContain(after.Response, r => r.Id == fixture.TestRealmRoleId);
+    }
+
+    [Fact]
+    public async Task GetUserRealmRolesAsync_WhenNoRolesAssigned_DoesNotContainTestRole()
+    {
+        // Ensure clean state
+        await Role.RemoveRealmRoleFromUserAsync(
+            fixture.TestUserId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+
+        var result = await Role.GetUserRealmRolesAsync(fixture.TestUserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.DoesNotContain(result.Response, r => r.Id == fixture.TestRealmRoleId);
+    }
+
+    // ── Realm Role ↔ Group ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AssignAndRemoveRealmRoleToGroup_WorksRoundTrip()
+    {
+        // Assign
+        var assign = await Role.AssignRealmRoleToGroupAsync(
+            fixture.TestGroupId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+        Assert.True(assign.IsSuccessful);
+
+        // Verify assignment
+        var groupRoles = await Role.GetGroupRealmRolesAsync(fixture.TestGroupId);
+        Assert.True(groupRoles.IsSuccessful);
+        Assert.Contains(groupRoles.Response, r => r.Id == fixture.TestRealmRoleId);
+
+        // Remove
+        var remove = await Role.RemoveRealmRoleFromGroupAsync(
+            fixture.TestGroupId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+        Assert.True(remove.IsSuccessful);
+
+        // Verify removal
+        var after = await Role.GetGroupRealmRolesAsync(fixture.TestGroupId);
+        Assert.DoesNotContain(after.Response, r => r.Id == fixture.TestRealmRoleId);
+    }
+
+    [Fact]
+    public async Task GetGroupRealmRolesAsync_WhenNoRolesAssigned_DoesNotContainTestRole()
+    {
+        // Ensure clean state
+        await Role.RemoveRealmRoleFromGroupAsync(
+            fixture.TestGroupId, fixture.TestRealmRoleId, KeycloakFixture.TestRealmRoleName);
+
+        var result = await Role.GetGroupRealmRolesAsync(fixture.TestGroupId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.DoesNotContain(result.Response, r => r.Id == fixture.TestRealmRoleId);
+    }
+}
