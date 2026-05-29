@@ -5,11 +5,19 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.1.2</Version>
+        <Version>1.2.0</Version>
         <Authors>Milad.Rv</Authors>
         <Title>Keycloak.Net.Sdk</Title>
         <RepositoryUrl>https://github.com/MiladRv/Keycloak.Net</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>A .NET SDK to connect your application to Keycloak</Description>
+        <Copyright>Copyright © 2024 Milad.Rv</Copyright>
+        <PackageProjectUrl>https://github.com/MiladRv/Keycloak.Net</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/MiladRv/Keycloak.Net</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>keycloak;auth;openid;oauth2;dotnet</PackageTags>
+        <PackageReleaseNotes>https://github.com/MiladRv/Keycloak.Net/releases</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
