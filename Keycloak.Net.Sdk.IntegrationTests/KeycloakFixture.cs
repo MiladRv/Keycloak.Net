@@ -28,14 +28,16 @@ public class KeycloakFixture : IAsyncLifetime
     private KeycloakContainer _container = null!;
 
     // ── Public state consumed by tests ────────────────────────────────────────
-    public IServiceProvider Services     { get; private set; } = null!;
-    public string           TestUserId   { get; private set; } = null!;
-    public string           TestRoleId   { get; private set; } = null!;
-    public const string     TestRoleName = "sdk-test-role";
-    public const string     TestUsername = "sdk-test-user";
-    public const string     TestPassword = "Test@1234";
-    public const string     Realm        = "sdk-integration";
-    public const string     SdkClientId  = "sdk-client";
+    public IServiceProvider Services      { get; private set; } = null!;
+    public string           TestUserId    { get; private set; } = null!;
+    public string           TestRoleId    { get; private set; } = null!;
+    public string           TestGroupId   { get; private set; } = null!;
+    public const string     TestRoleName  = "sdk-test-role";
+    public const string     TestGroupName = "sdk-test-group";
+    public const string     TestUsername  = "sdk-test-user";
+    public const string     TestPassword  = "Test@1234";
+    public const string     Realm         = "sdk-integration";
+    public const string     SdkClientId   = "sdk-client";
 
     private const string AdminUsername = "admin";
     private const string AdminPassword = "admin";
@@ -66,6 +68,9 @@ public class KeycloakFixture : IAsyncLifetime
 
         // 6. Create test user
         TestUserId = await CreateTestUserAsync(http, adminToken, Realm, TestUsername, TestPassword);
+
+        // 7. Create test group
+        TestGroupId = await CreateGroupAsync(http, adminToken, Realm, TestGroupName);
 
         // 7. Wire up the SDK
         var config = new KeycloakConfiguration
@@ -189,6 +194,15 @@ public class KeycloakFixture : IAsyncLifetime
                 enabled = true,
                 credentials = new[] { new { type = "password", value = password, temporary = false } }
             });
+        var resp = await http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+        return resp.Headers.Location!.ToString().Split('/').Last();
+    }
+
+    private static async Task<string> CreateGroupAsync(
+        HttpClient http, string token, string realm, string groupName)
+    {
+        var req  = AuthorizedPost($"admin/realms/{realm}/groups", token, new { name = groupName });
         var resp = await http.SendAsync(req);
         resp.EnsureSuccessStatusCode();
         return resp.Headers.Location!.ToString().Split('/').Last();
