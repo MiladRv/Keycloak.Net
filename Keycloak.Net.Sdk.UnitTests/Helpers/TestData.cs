@@ -108,4 +108,23 @@ public static class TestData
         """;
 
     public static string RealmRolesResponse => $"[{RealmRoleResponse}]";
+
+    public const string SessionId = "session-id-xyz";
+
+    public static string UserSessionResponse => $$"""
+        {
+            "id": "{{SessionId}}",
+            "username": "{{Username}}",
+            "userId": "{{UserId}}",
+            "ipAddress": "127.0.0.1",
+            "start": 1700000000000,
+            "lastAccess": 1700000001000,
+            "rememberMe": false,
+            "clients": {
+                "{{ClientUuid}}": "{{ClientId}}"
+            }
+        }
+        """;
+
+    public static string UserSessionsResponse => $"[{UserSessionResponse}]";
 }
