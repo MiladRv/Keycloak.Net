@@ -3,6 +3,7 @@ using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Groups.Contracts;
 using Keycloak.Net.Sdk.Realms;
 using Keycloak.Net.Sdk.Roles.Contracts;
+using Keycloak.Net.Sdk.UserSessions.Contracts;
 using Keycloak.Net.Sdk.Users.Contracts;
 
 namespace Keycloak.Net.Sdk.Contracts;
@@ -15,4 +16,5 @@ public interface IKeycloakManagement
     public IRealmManagement RealmManagement { get; init; }
     public IClientManagement ClientManagement { get; init; }
     public IGroupManagement GroupManagement { get; init; }
+    public IUserSessionManagement UserSessionManagement { get; init; }
 }
