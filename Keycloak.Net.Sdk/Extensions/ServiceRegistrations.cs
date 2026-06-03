@@ -33,18 +33,18 @@ public static class ServiceRegistrations
         // Register DelegatingHandler
         services.AddTransient<KeycloakAuthHandler>();
 
-        // Register HttpClient with Polly + DelegatingHandler
+        // Register HttpClient with resilience + DelegatingHandler
         services.AddHttpClient("keycloak", client => { client.BaseAddress = new Uri(options.ServerUrl); })
-            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration))
+            .AddKeycloakResilienceHandler(options)
             .AddHttpMessageHandler<KeycloakAuthHandler>();
 
-        // Register HttpClient for RealmManagement (no auth handler  uses master realm admin credentials)
+        // Register HttpClient for RealmManagement (no auth handler - uses master realm admin credentials)
         services.AddHttpClient("keycloak-admin", client => { client.BaseAddress = new Uri(options.ServerUrl); })
-            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
+            .AddKeycloakResilienceHandler(options);
 
-        // Register HttpClient for TokenProvider (no auth handler  used to fetch service-account tokens)
+        // Register HttpClient for TokenProvider (no auth handler - used to fetch service-account tokens)
         services.AddHttpClient("keycloak-token", client => { client.BaseAddress = new Uri(options.ServerUrl); })
-            .AddPolicyHandler(PollyExtensions.GetRetryPolicy(configuration));
+            .AddKeycloakResilienceHandler(options);
 
         // Register managers
         services.AddScoped<IKeycloakManagement, KeycloakManagement>();

@@ -1,6 +1,6 @@
 # Keycloak.Net.Sdk
 
-A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) using `IHttpClientFactory`, typed services, and built-in retry policies.
+A modular .NET SDK for integrating with [Keycloak](https://www.keycloak.org/) using `IHttpClientFactory`, typed services, and built-in retry policies. Supports **.NET 8** and **.NET 10**.
 
 📦 [NuGet: Keycloak.Net.Sdk](https://www.nuget.org/packages/Keycloak.Net.Sdk)
 
@@ -16,8 +16,9 @@ A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) 
 - Manage client scopes
 - Manage realms
 - Manage groups (create, delete, get, add/remove users)
+- Manage user sessions (get active sessions, revoke a session, logout from all sessions)
 - Token management (get service-account token, revoke token)
-- Built-in retry policy via Polly
+- Built-in retry policy via `Microsoft.Extensions.Http.Resilience`
 - Auth handler that automatically attaches Bearer tokens to requests
 - Fully supports `IHttpClientFactory` and dependency injection
 
@@ -25,7 +26,7 @@ A modular .NET 8 SDK for integrating with [Keycloak](https://www.keycloak.org/) 
 
 ## Requirements
 
-- .NET 8+
+- .NET 8 or .NET 10
 - A running Keycloak server (v21+)
 - A confidential client with **Service Accounts Enabled**
 
@@ -66,8 +67,8 @@ dotnet add package Keycloak.Net.Sdk
 | `ClientUuid` | Client UUID (used in Admin API calls) |
 | `AdminUsername` | Master realm admin username (for realm management) |
 | `AdminPassword` | Master realm admin password |
-| `NumberOfRetries` | Polly retry count (default: 3) |
-| `DelayBetweenRetryRequestsInSeconds` | Delay between retries (default: 2) |
+| `NumberOfRetries` | Retry count (default: 3) |
+| `DelayBetweenRetryRequestsInSeconds` | Delay between retries in seconds (default: 2) |
 
 ### 2. Register Services
 
@@ -129,6 +130,32 @@ public class RoleService(IRoleManagement roles)
 }
 ```
 
+Use `IUserSessionManagement` to manage active sessions:
+
+```csharp
+public class SessionService(IUserSessionManagement sessions)
+{
+    // Get all active sessions for a user
+    public async Task<List<UserSessionResponseDto>> GetSessionsAsync(string userId)
+    {
+        var result = await sessions.GetUserSessionsAsync(userId);
+        return result.Response;
+    }
+
+    // Logout user from all devices
+    public async Task LogoutEverywhereAsync(string userId)
+    {
+        await sessions.LogoutUserAsync(userId);
+    }
+
+    // Revoke a specific session
+    public async Task RevokeAsync(string sessionId)
+    {
+        await sessions.RevokeSessionAsync(sessionId);
+    }
+}
+```
+
 Or use `IGroupManagement` to organize users into groups:
 
 ```csharp
@@ -157,6 +184,7 @@ public class GroupService(IGroupManagement groups)
 | `IRealmManagement` | Create realm |
 | `ITokenManagement` | Get service-account token, revoke token |
 | `IGroupManagement` | Create/delete group, get groups, add/remove user from group, get user's groups |
+| `IUserSessionManagement` | Get active sessions, revoke a specific session, logout user from all sessions |
 
 ---
 
@@ -207,6 +235,7 @@ Keycloak.Net.Sdk/                  # SDK source
 ├── Groups/                        # GroupManagement + DTOs
 ├── Realms/                        # RealmManagement
 ├── Roles/                         # RoleManagement + DTOs
+├── UserSessions/                  # UserSessionManagement + DTOs
 └── Users/                         # UserManagement + DTOs
 
 Keycloak.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler)
