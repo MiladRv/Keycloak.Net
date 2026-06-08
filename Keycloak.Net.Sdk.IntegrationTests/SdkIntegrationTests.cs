@@ -97,6 +97,51 @@ public class UserManagementIntegrationTests(KeycloakFixture fixture)
         // Restore original password so other tests aren't affected
         await User.SetUserPasswordAsync(fixture.TestUserId, KeycloakFixture.TestPassword);
     }
+
+    [Fact]
+    public async Task GetUsersAsync_NoQuery_ReturnsAtLeastOneUser()
+    {
+        var result = await User.GetUsersAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotEmpty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithMaxOne_ReturnsExactlyOneUser()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Max = 1 });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithFirstBeyondTotal_ReturnsEmptyList()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { First = 10_000 });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithUsernameFilter_ReturnsMatchingUser()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Username = KeycloakFixture.TestUsername });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Contains(result.Response, u => u.Username == KeycloakFixture.TestUsername);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithEnabledFilter_ReturnsOnlyEnabledUsers()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Enabled = true });
+
+        Assert.True(result.IsSuccessful);
+        Assert.All(result.Response, u => Assert.True(u.Enabled));
+    }
 }
 
 [Collection(nameof(KeycloakCollection))]

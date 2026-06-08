@@ -199,4 +199,94 @@ public class UserManagementTests
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
         Assert.Contains("\"enabled\":false", body);
     }
+
+    // ── GetUsersAsync ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUsersAsync_NoQuery_ReturnsUserList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var result = await sut.GetUsersAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Equal(TestData.UserId, result.Response[0].Id);
+        Assert.DoesNotContain("?", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithPagination_SendsFirstAndMaxParams()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var query = new GetUsersQueryDto { First = 10, Max = 5 };
+        await sut.GetUsersAsync(query);
+
+        var requestUri = handler.SentRequests[0].RequestUri!.Query;
+        Assert.Contains("first=10", requestUri);
+        Assert.Contains("max=5", requestUri);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithSearch_SendsSearchParam()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var query = new GetUsersQueryDto { Search = "john" };
+        await sut.GetUsersAsync(query);
+
+        Assert.Contains("search=john", handler.SentRequests[0].RequestUri!.Query);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithFilters_SendsAllFilterParams()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var query = new GetUsersQueryDto
+        {
+            Username  = "alice",
+            Email     = "alice@example.com",
+            FirstName = "Alice",
+            LastName  = "Smith",
+            Enabled   = true
+        };
+        await sut.GetUsersAsync(query);
+
+        var qs = handler.SentRequests[0].RequestUri!.Query;
+        Assert.Contains("username=alice", qs);
+        Assert.Contains("email=alice%40example.com", qs);
+        Assert.Contains("firstName=Alice", qs);
+        Assert.Contains("lastName=Smith", qs);
+        Assert.Contains("enabled=true", qs);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_EmptyResult_ReturnsEmptyList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, "[]");
+
+        var result = await sut.GetUsersAsync(new GetUsersQueryDto { Max = 10 });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_Forbidden_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.Forbidden);
+
+        var result = await sut.GetUsersAsync();
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
+    }
 }
