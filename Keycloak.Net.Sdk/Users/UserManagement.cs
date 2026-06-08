@@ -141,4 +141,57 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<KeycloakBaseResponse<Dictionary<string, List<string>>>> GetUserAttributesAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var result = await GetUserAsync(userId, cancellationToken);
+        if (!result.IsSuccessful)
+            return new KeycloakFailureResponse<Dictionary<string, List<string>>>(result.StatusCode, result.ErrorMessage);
+
+        var attributes = result.Response.Attributes ?? new Dictionary<string, List<string>>();
+        return new KeycloakBaseResponse<Dictionary<string, List<string>>>(attributes, true, result.StatusCode);
+    }
+
+    public async Task SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default)
+    {
+        var existing = await GetUserAsync(userId, cancellationToken);
+        if (!existing.IsSuccessful)
+            throw new HttpRequestException($"Failed to get user {userId}: {existing.ErrorMessage}", null, existing.StatusCode);
+
+        var attributes = existing.Response.Attributes ?? new Dictionary<string, List<string>>();
+        attributes[key] = [value];
+
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
+        var payload = new { attributes };
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users?email={Uri.EscapeDataString(email)}&exact=true";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
+    }
 }

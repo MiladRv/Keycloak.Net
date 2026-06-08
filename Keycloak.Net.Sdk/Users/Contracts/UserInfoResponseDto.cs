@@ -8,6 +8,14 @@ public sealed record UserInfoResponseDto()
     public string Id { get; set; }
     [JsonPropertyName("username")]
     public string Username { get; set; }
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+    [JsonPropertyName("firstName")]
+    public string? FirstName { get; set; }
+    [JsonPropertyName("lastName")]
+    public string? LastName { get; set; }
+    [JsonPropertyName("attributes")]
+    public Dictionary<string, List<string>>? Attributes { get; set; }
     [JsonPropertyName("emailVerified")]
     public bool EmailVerified { get; set; }
     [JsonPropertyName("createdTimestamp")]
