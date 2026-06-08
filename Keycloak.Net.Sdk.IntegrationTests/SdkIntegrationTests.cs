@@ -97,6 +97,141 @@ public class UserManagementIntegrationTests(KeycloakFixture fixture)
         // Restore original password so other tests aren't affected
         await User.SetUserPasswordAsync(fixture.TestUserId, KeycloakFixture.TestPassword);
     }
+
+    [Fact]
+    public async Task GetUsersAsync_NoQuery_ReturnsAtLeastOneUser()
+    {
+        var result = await User.GetUsersAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotEmpty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithMaxOne_ReturnsExactlyOneUser()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Max = 1 });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithFirstBeyondTotal_ReturnsEmptyList()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { First = 10_000 });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithUsernameFilter_ReturnsMatchingUser()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Username = KeycloakFixture.TestUsername });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Contains(result.Response, u => u.Username == KeycloakFixture.TestUsername);
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_WithEnabledFilter_ReturnsOnlyEnabledUsers()
+    {
+        var result = await User.GetUsersAsync(new GetUsersQueryDto { Enabled = true });
+
+        Assert.True(result.IsSuccessful);
+        Assert.All(result.Response, u => Assert.True(u.Enabled));
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_ChangesProfileFields()
+    {
+        const string newFirstName = "Updated";
+        const string newLastName  = "Name";
+        const string newEmail     = "updated@example.com";
+
+        await User.UpdateUserAsync(fixture.TestUserId, new UpdateUserRequestDto
+        {
+            FirstName = newFirstName,
+            LastName  = newLastName,
+            Email     = newEmail
+        });
+
+        var result = await User.GetUserAsync(fixture.TestUserId);
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(newFirstName, result.Response.FirstName);
+        Assert.Equal(newLastName, result.Response.LastName);
+        Assert.Equal(newEmail, result.Response.Email);
+    }
+
+    [Fact]
+    public async Task GetUserAttributesAsync_NoAttributes_ReturnsEmptyDictionary()
+    {
+        var result = await User.GetUserAttributesAsync(fixture.TestUserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotNull(result.Response);
+    }
+
+    [Fact]
+    public async Task SetAndGetUserAttributeAsync_WorksRoundTrip()
+    {
+        await User.SetUserAttributeAsync(fixture.TestUserId, "department", "engineering");
+
+        var result = await User.GetUserAttributesAsync(fixture.TestUserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.True(result.Response.ContainsKey("department"));
+        Assert.Equal("engineering", result.Response["department"][0]);
+    }
+
+    [Fact]
+    public async Task SetUserAttributeAsync_OverwritesExistingValue()
+    {
+        await User.SetUserAttributeAsync(fixture.TestUserId, "tenantId", "tenant-v1");
+        await User.SetUserAttributeAsync(fixture.TestUserId, "tenantId", "tenant-v2");
+
+        var result = await User.GetUserAttributesAsync(fixture.TestUserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("tenant-v2", result.Response["tenantId"][0]);
+    }
+
+    [Fact]
+    public async Task SetUserAttributeAsync_PreservesOtherAttributes()
+    {
+        await User.SetUserAttributeAsync(fixture.TestUserId, "attrA", "valueA");
+        await User.SetUserAttributeAsync(fixture.TestUserId, "attrB", "valueB");
+
+        var result = await User.GetUserAttributesAsync(fixture.TestUserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.True(result.Response.ContainsKey("attrA"));
+        Assert.True(result.Response.ContainsKey("attrB"));
+    }
+
+    [Fact]
+    public async Task GetUsersByEmailAsync_WithExactEmail_ReturnsMatchingUser()
+    {
+        // First set an email on the test user
+        const string email = "findme@example.com";
+        await User.UpdateUserAsync(fixture.TestUserId, new UpdateUserRequestDto { Email = email });
+
+        var result = await User.GetUsersByEmailAsync(email);
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotEmpty(result.Response);
+        Assert.Contains(result.Response, u => u.Email == email);
+    }
+
+    [Fact]
+    public async Task GetUsersByEmailAsync_WithNonExistentEmail_ReturnsEmptyList()
+    {
+        var result = await User.GetUsersByEmailAsync("nobody@nonexistent-domain-xyz.com");
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
 }
 
 [Collection(nameof(KeycloakCollection))]
