@@ -41,6 +41,21 @@ public static class TestData
 
     public static string UserListResponse => $"[{UserInfoResponse}]";
 
+    public static string UserWithAttributesResponse => $$"""
+        {
+            "id": "{{UserId}}",
+            "username": "{{Username}}",
+            "emailVerified": false,
+            "createdTimestamp": 1700000000000,
+            "enabled": true,
+            "totp": false,
+            "notBefore": 0,
+            "attributes": {
+                "department": ["engineering"]
+            }
+        }
+        """;
+
     public static string ClientRolesResponse => $$"""
         [
             {

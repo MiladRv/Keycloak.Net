@@ -14,4 +14,8 @@ public interface IUserManagement
     Task DisableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default);
     Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<Dictionary<string, List<string>>>> GetUserAttributesAsync(string userId, CancellationToken cancellationToken = default);
+    Task SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

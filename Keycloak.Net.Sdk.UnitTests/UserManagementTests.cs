@@ -289,4 +289,140 @@ public class UserManagementTests
         Assert.False(result.IsSuccessful);
         Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
     }
+
+    // ── UpdateUserAsync ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateUserAsync_Success_SendsPutWithCorrectPayload()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.UpdateUserAsync(TestData.UserId, new UpdateUserRequestDto
+        {
+            Email     = "new@example.com",
+            FirstName = "John",
+            LastName  = "Doe"
+        });
+
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
+        Assert.Contains($"users/{TestData.UserId}", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("\"email\":\"new@example.com\"", body);
+        Assert.Contains("\"firstName\":\"John\"", body);
+        Assert.Contains("\"lastName\":\"Doe\"", body);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_PartialUpdate_OnlySendsProvidedFields()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.UpdateUserAsync(TestData.UserId, new UpdateUserRequestDto { FirstName = "Jane" });
+
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("\"firstName\":\"Jane\"", body);
+    }
+
+    // ── GetUserAttributesAsync ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUserAttributesAsync_UserHasAttributes_ReturnsAttributesDictionary()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserWithAttributesResponse);
+
+        var result = await sut.GetUserAttributesAsync(TestData.UserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.True(result.Response.ContainsKey("department"));
+        Assert.Equal("engineering", result.Response["department"][0]);
+    }
+
+    [Fact]
+    public async Task GetUserAttributesAsync_UserHasNoAttributes_ReturnsEmptyDictionary()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserInfoResponse);
+
+        var result = await sut.GetUserAttributesAsync(TestData.UserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
+
+    [Fact]
+    public async Task GetUserAttributesAsync_UserNotFound_ReturnsFailure()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.GetUserAttributesAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    // ── SetUserAttributeAsync ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SetUserAttributeAsync_Success_GetsThenPutsWithAttribute()
+    {
+        var (sut, handler) = CreateSut();
+        // First call: GET user; second call: PUT with attributes
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserInfoResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.SetUserAttributeAsync(TestData.UserId, "tenantId", "tenant-abc");
+
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
+        Assert.Contains("tenantId", body);
+        Assert.Contains("tenant-abc", body);
+    }
+
+    [Fact]
+    public async Task SetUserAttributeAsync_PreservesExistingAttributes()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserWithAttributesResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.SetUserAttributeAsync(TestData.UserId, "tenantId", "tenant-xyz");
+
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
+        Assert.Contains("department", body);
+        Assert.Contains("tenantId", body);
+    }
+
+    // ── GetUsersByEmailAsync ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUsersByEmailAsync_Success_ReturnsMatchingUsers()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var result = await sut.GetUsersByEmailAsync("test@example.com");
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        var query = handler.SentRequests[0].RequestUri!.Query;
+        Assert.Contains("email=test%40example.com", query);
+        Assert.Contains("exact=true", query);
+    }
+
+    [Fact]
+    public async Task GetUsersByEmailAsync_NoMatch_ReturnsEmptyList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, "[]");
+
+        var result = await sut.GetUsersByEmailAsync("nobody@example.com");
+
+        Assert.True(result.IsSuccessful);
+        Assert.Empty(result.Response);
+    }
 }
