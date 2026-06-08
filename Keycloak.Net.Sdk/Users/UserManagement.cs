@@ -68,6 +68,34 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
+    public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default)
+    {
+        var qs = BuildUsersQueryString(query);
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users{qs}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
+    }
+
+    private static string BuildUsersQueryString(GetUsersQueryDto? query)
+    {
+        if (query is null) return string.Empty;
+
+        var parameters = new List<string>();
+
+        if (query.First.HasValue)     parameters.Add($"first={query.First.Value}");
+        if (query.Max.HasValue)       parameters.Add($"max={query.Max.Value}");
+        if (query.Search is not null) parameters.Add($"search={Uri.EscapeDataString(query.Search)}");
+        if (query.Username is not null) parameters.Add($"username={Uri.EscapeDataString(query.Username)}");
+        if (query.Email is not null)  parameters.Add($"email={Uri.EscapeDataString(query.Email)}");
+        if (query.FirstName is not null) parameters.Add($"firstName={Uri.EscapeDataString(query.FirstName)}");
+        if (query.LastName is not null)  parameters.Add($"lastName={Uri.EscapeDataString(query.LastName)}");
+        if (query.Enabled.HasValue)   parameters.Add($"enabled={query.Enabled.Value.ToString().ToLowerInvariant()}");
+
+        return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+    }
+
     public async Task SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/reset-password", UriKind.Relative);
