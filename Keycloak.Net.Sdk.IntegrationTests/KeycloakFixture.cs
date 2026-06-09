@@ -1,12 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using DotNet.Testcontainers.Builders;
 using Keycloak.Net.Sdk.Configurations;
-using Keycloak.Net.Sdk.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Testcontainers.Keycloak;
 using Xunit;
 using KeycloakConfiguration = Keycloak.Net.Sdk.Configurations.KeycloakConfiguration;

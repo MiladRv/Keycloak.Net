@@ -1,0 +1,56 @@
+name: Release Keycloak.Net.Sdk
+
+on:
+  push:
+    tags:
+      - 'sdk/v*'
+
+jobs:
+  test:
+    name: Build & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Unit Tests
+        run: dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj --configuration Release --no-build --verbosity normal
+
+  publish:
+    name: Pack & Publish to NuGet
+    needs: test
+    if: github.event.base_ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj --configuration Release --no-restore
+
+      - name: Pack
+        run: dotnet pack Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj --configuration Release --no-build --output ./nupkgs
+
+      - name: Publish to NuGet
+        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate

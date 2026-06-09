@@ -20,12 +20,19 @@ namespace Keycloak.Net.Sdk.Configurations;
 
 public static class ServiceRegistrations
 {
-    public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration, Action<KeycloakConfiguration>? configure = null)
     {
         // Bind options
         services.Configure<KeycloakConfiguration>(configuration.GetSection("keycloak"));
+        if (configure is not null)
+            services.PostConfigure<KeycloakConfiguration>(configure);
+
         var options = configuration.GetSection("keycloak").Get<KeycloakConfiguration>()
-            ?? throw new InvalidOperationException("Keycloak configuration section is missing. Add a 'keycloak' section to appsettings.json.");
+            ?? new KeycloakConfiguration();
+        configure?.Invoke(options);
+
+        if (string.IsNullOrWhiteSpace(options.ServerUrl))
+            throw new InvalidOperationException("Keycloak ServerUrl is not configured. Provide it via 'keycloak' config section or the configure callback.");
 
         // Register TokenCache
         services.AddSingleton<ITokenProvider, TokenProvider>();
