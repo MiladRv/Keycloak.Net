@@ -1,7 +1,6 @@
 using System.Net;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.UserSessions;
-using Keycloak.Net.Sdk.UserSessions.Contracts;
 using Keycloak.Net.Sdk.UnitTests.Helpers;
 using Microsoft.Extensions.Options;
 using Xunit;

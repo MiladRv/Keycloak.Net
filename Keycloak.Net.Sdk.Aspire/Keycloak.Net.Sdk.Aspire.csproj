@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0.0</Version>
+        <Authors>Milad.Rv</Authors>
+        <Title>Keycloak.Net.Sdk.Aspire</Title>
+        <Description>.NET Aspire client integration for Keycloak.Net.Sdk — wires the SDK into a dependent project using the Aspire-injected connection string</Description>
+        <RepositoryUrl>https://github.com/MiladRv/Keycloak.Net</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Copyright>Copyright © 2024 Milad.Rv</Copyright>
+        <PackageProjectUrl>https://github.com/MiladRv/Keycloak.Net</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>keycloak;aspire;dotnet-aspire;auth;openid</PackageTags>
+        <PackageReleaseNotes>https://github.com/MiladRv/Keycloak.Net/releases</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Keycloak.Net.Sdk\Keycloak.Net.Sdk.csproj" />
+    </ItemGroup>
+
+</Project>
