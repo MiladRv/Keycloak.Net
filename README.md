@@ -1,50 +1,38 @@
 # Keycloak.Net.Sdk
 
-A modular .NET SDK for integrating with [Keycloak](https://www.keycloak.org/) using `IHttpClientFactory`, typed services, and built-in retry policies. Supports **.NET 8** and **.NET 10**.
+A modular .NET SDK for integrating with [Keycloak](https://www.keycloak.org/) via `IHttpClientFactory`, typed services, and built-in retry policies. Supports **.NET 8** and **.NET 10**.
 
-📦 [NuGet: Keycloak.Net.Sdk](https://www.nuget.org/packages/Keycloak.Net.Sdk)
+📦 [Keycloak.Net.Sdk](https://www.nuget.org/packages/Keycloak.Net.Sdk) — core SDK  
+📦 [Keycloak.Net.Sdk.Aspire.Hosting](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire.Hosting) — .NET Aspire AppHost integration  
+📦 [Keycloak.Net.Sdk.Aspire](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire) — .NET Aspire client integration  
 
 ---
 
 ## Features
 
 - Sign up / sign in users
-- Manage users (get, enable/disable, set password, delete)
-- Manage client roles (get, assign/remove to users)
-- Manage realm roles (get, create, delete, assign/remove to users and groups)
-- Manage clients (get, create, delete, enable service accounts)
-- Manage client scopes
-- Manage realms
-- Manage groups (create, delete, get, add/remove users)
-- Manage user sessions (get active sessions, revoke a session, logout from all sessions)
-- Token management (get service-account token, revoke token)
+- User management — get, enable/disable, set password, delete
+- Role management — client roles & realm roles (assign/remove to users and groups)
+- Client management — get, create, delete, enable service accounts
+- Realm management — create realms
+- Group management — create/delete, add/remove users
+- Session management — get active sessions, revoke, logout all
+- Token management — get service-account token, revoke
 - Built-in retry policy via `Microsoft.Extensions.Http.Resilience`
-- Auth handler that automatically attaches Bearer tokens to requests
-- Fully supports `IHttpClientFactory` and dependency injection
+- Auto-attaching Bearer token handler
+- Full DI + `IHttpClientFactory` support
+- .NET Aspire integration (AppHost + client)
 
 ---
 
-## Requirements
-
-- .NET 8 or .NET 10
-- A running Keycloak server (v21+)
-- A confidential client with **Service Accounts Enabled**
-
----
-
-## Installation
+## Quick Start
 
 ```bash
 dotnet add package Keycloak.Net.Sdk
 ```
 
----
-
-## Configuration
-
-### 1. `appsettings.json`
-
 ```json
+// appsettings.json
 "keycloak": {
   "ServerUrl": "https://your-keycloak-host/",
   "RealmName": "your-realm",
@@ -52,202 +40,47 @@ dotnet add package Keycloak.Net.Sdk
   "ClientSecret": "your-client-secret",
   "ClientUuid": "your-client-uuid",
   "AdminUsername": "admin",
-  "AdminPassword": "admin-password",
-  "NumberOfRetries": 3,
-  "DelayBetweenRetryRequestsInSeconds": 2
+  "AdminPassword": "admin-password"
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `ServerUrl` | Keycloak base URL (include trailing slash) |
-| `RealmName` | The realm your client belongs to |
-| `ClientId` | Client ID (used for service-account token requests) |
-| `ClientSecret` | Client secret |
-| `ClientUuid` | Client UUID (used in Admin API calls) |
-| `AdminUsername` | Master realm admin username (for realm management) |
-| `AdminPassword` | Master realm admin password |
-| `NumberOfRetries` | Retry count (default: 3) |
-| `DelayBetweenRetryRequestsInSeconds` | Delay between retries in seconds (default: 2) |
-
-### 2. Register Services
+```csharp
+// Program.cs
+builder.Services.AddKeycloak(builder.Configuration);
+```
 
 ```csharp
-builder.Services.AddKeycloak(builder.Configuration);
+// Inject and use
+public class MyService(IUserManagement users, IRoleManagement roles) { }
 ```
 
 ---
 
-## Usage
+## Documentation
 
-Inject the interface you need:
-
-```csharp
-public class MyService(IUserManagement users, IRoleManagement roles)
-{
-    public async Task CreateAndAssignAsync()
-    {
-        var signup = await users.SignupAsync(new SignupRequestDto
-        {
-            Username  = "john.doe",
-            Email     = "john@example.com",
-            FirstName = "John",
-            LastName  = "Doe",
-            Password  = "Secret@123"
-        });
-
-        await roles.AssignClientRoleToUser(userId: signup.Response.Id, roleId: "role-uuid");
-    }
-}
-```
-
-Use `IRoleManagement` for both client roles and realm roles:
-
-```csharp
-public class RoleService(IRoleManagement roles)
-{
-    // Realm role CRUD
-    public async Task CreateRealmRoleAsync()
-    {
-        await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
-        {
-            Name        = "admin",
-            Description = "Full access role"
-        });
-    }
-
-    // Assign a realm role to a user
-    public async Task AssignRealmRoleToUserAsync(string userId, string roleId, string roleName)
-    {
-        await roles.AssignRealmRoleToUserAsync(userId, roleId, roleName);
-    }
-
-    // Assign a realm role to a group
-    public async Task AssignRealmRoleToGroupAsync(string groupId, string roleId, string roleName)
-    {
-        await roles.AssignRealmRoleToGroupAsync(groupId, roleId, roleName);
-    }
-}
-```
-
-Use `IUserSessionManagement` to manage active sessions:
-
-```csharp
-public class SessionService(IUserSessionManagement sessions)
-{
-    // Get all active sessions for a user
-    public async Task<List<UserSessionResponseDto>> GetSessionsAsync(string userId)
-    {
-        var result = await sessions.GetUserSessionsAsync(userId);
-        return result.Response;
-    }
-
-    // Logout user from all devices
-    public async Task LogoutEverywhereAsync(string userId)
-    {
-        await sessions.LogoutUserAsync(userId);
-    }
-
-    // Revoke a specific session
-    public async Task RevokeAsync(string sessionId)
-    {
-        await sessions.RevokeSessionAsync(sessionId);
-    }
-}
-```
-
-Or use `IGroupManagement` to organize users into groups:
-
-```csharp
-public class GroupService(IGroupManagement groups)
-{
-    public async Task AssignUserToGroupAsync(string userId, string groupId)
-    {
-        await groups.AddUserToGroupAsync(userId, groupId);
-    }
-
-    public async Task<List<GroupResponseDto>> GetUserGroupsAsync(string userId)
-    {
-        var result = await groups.GetUserGroupsAsync(userId);
-        return result.Response;
-    }
-}
-```
-
-### Available Interfaces
-
-| Interface | Responsibilities |
-|-----------|-----------------|
-| `IUserManagement` | Sign up, sign in, get user, enable/disable, set password, delete |
-| `IRoleManagement` | Client roles: get, assign/remove to users. Realm roles: get, create, delete, assign/remove to users and groups |
-| `IClientManagement` | Get clients, get client scopes, create/delete client, enable service accounts |
-| `IRealmManagement` | Create realm |
-| `ITokenManagement` | Get service-account token, revoke token |
-| `IGroupManagement` | Create/delete group, get groups, add/remove user from group, get user's groups |
-| `IUserSessionManagement` | Get active sessions, revoke a specific session, logout user from all sessions |
+- [Getting Started](docs/getting-started.md)
+- [User Management](docs/user-management.md)
+- [Role Management](docs/role-management.md)
+- [Group Management](docs/group-management.md)
+- [Session Management](docs/session-management.md)
+- [.NET Aspire Integration](docs/aspire-integration.md)
 
 ---
 
 ## Running Tests
 
-### Unit Tests
-
-Unit tests use a fake `HttpMessageHandler`  no external dependencies required.
-
 ```bash
+# Unit tests (no external dependencies)
 dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
-```
 
-### Integration Tests
-
-Integration tests spin up a real Keycloak instance via [Testcontainers](https://dotnet.testcontainers.org/). **Docker must be running.**
-
-```bash
+# Integration tests (requires Docker)
 dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj
-```
-
-The fixture automatically handles the full setup sequence:
-1. Starts a Keycloak container
-2. Creates a dedicated test realm
-3. Creates a confidential client with service accounts
-4. Grants realm-admin role to the service account
-5. Creates a test user, client role, realm role, and group
-
-> The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
-
-### All Tests
-
-```bash
-dotnet test
-```
-
----
-
-## Project Structure
-
-```
-Keycloak.Net.Sdk/                  # SDK source
-├── Athentications/                # TokenProvider, TokenManagement, KeycloakAuthHandler
-├── Clients/                       # ClientManagement + DTOs
-├── Configurations/                # KeycloakConfiguration
-├── Contracts/                     # Shared response types (KeycloakBaseResponse)
-├── Extensions/                    # ServiceRegistrations, ExceptionHandler
-├── Groups/                        # GroupManagement + DTOs
-├── Realms/                        # RealmManagement
-├── Roles/                         # RoleManagement + DTOs
-├── UserSessions/                  # UserSessionManagement + DTOs
-└── Users/                         # UserManagement + DTOs
-
-Keycloak.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler)
-Keycloak.Net.Sdk.IntegrationTests/ # Integration tests (Testcontainers.Keycloak)
 ```
 
 ---
 
 ## License
 
-[MIT](LICENSE)
-
-## Contact
+[MIT](LICENSE) — Copyright © 2024 Milad.Rv
 
 Questions or feedback: [miladrivandi73@gmail.com](mailto:miladrivandi73@gmail.com) or open an issue.
