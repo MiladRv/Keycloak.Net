@@ -109,7 +109,7 @@ builder.AddKeycloakSdk();
 }
 ```
 
----
+Or use `IGroupManagement` to organize users into groups:
 
 ## Features
 
@@ -154,12 +154,55 @@ builder.AddKeycloakSdk();
 
 ## Running Tests
 
+### Unit Tests
+
+Unit tests use a fake `HttpMessageHandler`  no external dependencies required.
+
 ```bash
 # Unit tests - no external dependencies
 dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
+```
+
+### Integration Tests
 
 # Integration tests - requires Docker (Testcontainers.Keycloak)
 dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj
+```
+
+The fixture automatically handles the full setup sequence:
+1. Starts a Keycloak container
+2. Creates a dedicated test realm
+3. Creates a confidential client with service accounts
+4. Grants realm-admin role to the service account
+5. Creates a test user, client role, realm role, and group
+
+> The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
+
+### All Tests
+
+```bash
+dotnet test
+```
+
+---
+
+## Project Structure
+
+```
+Keycloak.Net.Sdk/                  # SDK source
+├── Athentications/                # TokenProvider, TokenManagement, KeycloakAuthHandler
+├── Clients/                       # ClientManagement + DTOs
+├── Configurations/                # KeycloakConfiguration
+├── Contracts/                     # Shared response types (KeycloakBaseResponse)
+├── Extensions/                    # ServiceRegistrations, ExceptionHandler
+├── Groups/                        # GroupManagement + DTOs
+├── Realms/                        # RealmManagement
+├── Roles/                         # RoleManagement + DTOs
+├── UserSessions/                  # UserSessionManagement + DTOs
+└── Users/                         # UserManagement + DTOs
+
+Keycloak.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler)
+Keycloak.Net.Sdk.IntegrationTests/ # Integration tests (Testcontainers.Keycloak)
 ```
 
 ---
