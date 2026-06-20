@@ -69,6 +69,8 @@ public static class TestData
         ]
         """;
 
+    public const string ClientScopeId = "scope-id-1";
+
     public static string ClientScopesResponse => """
         [
             {
@@ -78,6 +80,15 @@ public static class TestData
                 "protocol": "openid-connect"
             }
         ]
+        """;
+
+    public static string ClientScopeResponse => $$"""
+        {
+            "id": "{{ClientScopeId}}",
+            "name": "profile",
+            "description": "OpenID Connect built-in scope: profile",
+            "protocol": "openid-connect"
+        }
         """;
 
     public static string ClientsResponse => """
