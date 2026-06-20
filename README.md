@@ -145,6 +145,7 @@ builder.AddKeycloakSdk();
 - [Getting Started](docs/getting-started.md)
 - [User Management](docs/user-management.md)
 - [Role Management](docs/role-management.md)
+- [Client Management](docs/client-management.md)
 - [Group Management](docs/group-management.md)
 - [Session Management](docs/session-management.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
