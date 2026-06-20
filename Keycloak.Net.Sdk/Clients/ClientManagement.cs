@@ -21,8 +21,51 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
         var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync<List<ClientScopeResponseDto>>();
     }
-    
-      public async Task<KeycloakBaseResponse<List<ClientResponseDto>>> GetClientsAsync(CancellationToken cancellationToken = default)
+
+    public async Task<KeycloakBaseResponse<ClientScopeResponseDto>> GetClientScopeAsync(string scopeId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes/{scopeId}", UriKind.Relative);
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<ClientScopeResponseDto>();
+    }
+
+    public async Task<KeycloakBaseResponse> CreateClientScopeAsync(CreateClientScopeRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes", UriKind.Relative);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> UpdateClientScopeAsync(string scopeId, UpdateClientScopeRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes/{scopeId}", UriKind.Relative);
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> DeleteClientScopeAsync(string scopeId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes/{scopeId}", UriKind.Relative);
+
+        var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse<List<ClientResponseDto>>> GetClientsAsync(CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients", UriKind.Relative);
         var response = await _httpClient.GetAsync(uri, cancellationToken);

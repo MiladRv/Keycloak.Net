@@ -342,6 +342,48 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
         var deleted = await Client.DeleteClientAsync(found.Id);
         Assert.True(deleted.IsSuccessful);
     }
+
+    [Fact]
+    public async Task ClientScopeCrud_WorksRoundTrip()
+    {
+        var scopeName = $"temp-scope-{Guid.NewGuid():N}";
+
+        // Create
+        var created = await Client.CreateClientScopeAsync(new CreateClientScopeRequestDto
+        {
+            Name        = scopeName,
+            Description = "Temp integration test scope"
+        });
+        Assert.True(created.IsSuccessful);
+
+        // Find the created scope's id
+        var scopes = await Client.GetClientScopes();
+        var found  = scopes.Response.FirstOrDefault(s => s.Name == scopeName);
+        Assert.NotNull(found);
+
+        // Get by id
+        var fetched = await Client.GetClientScopeAsync(found.Id);
+        Assert.True(fetched.IsSuccessful);
+        Assert.Equal(scopeName, fetched.Response.Name);
+
+        // Update
+        var updated = await Client.UpdateClientScopeAsync(found.Id, new UpdateClientScopeRequestDto
+        {
+            Name        = scopeName,
+            Description = "Updated description"
+        });
+        Assert.True(updated.IsSuccessful);
+
+        var refetched = await Client.GetClientScopeAsync(found.Id);
+        Assert.Equal("Updated description", refetched.Response.Description);
+
+        // Delete
+        var deleted = await Client.DeleteClientScopeAsync(found.Id);
+        Assert.True(deleted.IsSuccessful);
+
+        var afterDelete = await Client.GetClientScopeAsync(found.Id);
+        Assert.False(afterDelete.IsSuccessful);
+    }
 }
 
 [Collection(nameof(KeycloakCollection))]

@@ -41,6 +41,72 @@ public class ClientManagementTests
         Assert.Contains($"realms/{TestData.RealmName}/client-scopes", handler.SentRequests[0].RequestUri!.ToString());
     }
 
+    // ── GetClientScopeAsync ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetClientScopeAsync_Success_ReturnsScope()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopeResponse);
+
+        var result = await sut.GetClientScopeAsync(TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("profile", result.Response.Name);
+        Assert.Contains($"client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── CreateClientScopeAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateClientScopeAsync_Success_SendsCorrectRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.Created);
+
+        var request = new CreateClientScopeRequestDto { Name = "new-scope", Description = "A new scope" };
+        var result = await sut.CreateClientScopeAsync(request);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Post, handler.SentRequests[0].Method);
+        Assert.Contains($"admin/realms/{TestData.RealmName}/client-scopes", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("new-scope", body);
+    }
+
+    // ── UpdateClientScopeAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateClientScopeAsync_Success_SendsPutRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var request = new UpdateClientScopeRequestDto { Name = "updated-scope", Description = "Updated" };
+        var result = await sut.UpdateClientScopeAsync(TestData.ClientScopeId, request);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
+        Assert.Contains($"client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("updated-scope", body);
+    }
+
+    // ── DeleteClientScopeAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteClientScopeAsync_Success_SendsDeleteRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.DeleteClientScopeAsync(TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains(TestData.ClientScopeId, handler.SentRequests[0].RequestUri!.ToString());
+    }
+
     // ── GetClientsAsync ───────────────────────────────────────────────────────
 
     [Fact]
