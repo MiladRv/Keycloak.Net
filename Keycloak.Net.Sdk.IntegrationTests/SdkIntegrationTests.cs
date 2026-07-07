@@ -3,6 +3,8 @@ using Keycloak.Net.Sdk.Roles.Contracts;
 using Keycloak.Net.Sdk.Athentications.Contracts;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Groups.Contracts;
+using Keycloak.Net.Sdk.Realms;
+using Keycloak.Net.Sdk.Realms.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -617,5 +619,73 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
 
         Assert.True(result.IsSuccessful);
         Assert.DoesNotContain(result.Response, r => r.Id == fixture.TestRealmRoleId);
+    }
+}
+
+[Collection(nameof(KeycloakCollection))]
+public class RealmManagementIntegrationTests(KeycloakFixture fixture)
+{
+    private IRealmManagement Realm => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IRealmManagement>();
+
+    [Fact]
+    public async Task GetRealmsAsync_ReturnsCreatedTestRealm()
+    {
+        var result = await Realm.GetRealmsAsync();
+
+        Assert.True(result.IsSuccessful);
+        Assert.Contains(result.Response, r => r.Realm == KeycloakFixture.Realm);
+    }
+
+    [Fact]
+    public async Task GetRealmAsync_WithValidName_ReturnsRealmDetails()
+    {
+        var result = await Realm.GetRealmAsync(KeycloakFixture.Realm);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(KeycloakFixture.Realm, result.Response.Realm);
+        Assert.True(result.Response.Enabled);
+    }
+
+    [Fact]
+    public async Task GetRealmAsync_WithInvalidName_ReturnsFailure()
+    {
+        var result = await Realm.GetRealmAsync("non-existent-realm-xyz");
+
+        Assert.False(result.IsSuccessful);
+    }
+
+    [Fact]
+    public async Task CreateGetUpdateDeleteRealmAsync_WorksRoundTrip()
+    {
+        var realmName = $"temp-realm-{Guid.NewGuid():N}";
+
+        // Create
+        var created = await Realm.CreateRealmAsync(realmName);
+        Assert.True(created.IsSuccessful);
+
+        // Get
+        var fetched = await Realm.GetRealmAsync(realmName);
+        Assert.True(fetched.IsSuccessful);
+        Assert.Equal(realmName, fetched.Response.Realm);
+
+        // Update
+        var updated = await Realm.UpdateRealmAsync(realmName, new UpdateRealmRequestDto
+        {
+            DisplayName = "Temp Integration Test Realm",
+            Enabled = true
+        });
+        Assert.True(updated.IsSuccessful);
+
+        var refetched = await Realm.GetRealmAsync(realmName);
+        Assert.True(refetched.IsSuccessful);
+        Assert.Equal("Temp Integration Test Realm", refetched.Response.DisplayName);
+
+        // Delete
+        var deleted = await Realm.DeleteRealmAsync(realmName);
+        Assert.True(deleted.IsSuccessful);
+
+        // Verify deleted
+        var afterDelete = await Realm.GetRealmAsync(realmName);
+        Assert.False(afterDelete.IsSuccessful);
     }
 }

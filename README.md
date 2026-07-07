@@ -117,7 +117,7 @@ Or use `IGroupManagement` to organize users into groups:
 - **User management**: get, enable/disable, set password, delete
 - **Role management**: client roles & realm roles (get, create, assign/remove to users and groups)
 - **Client management**: get, create, delete clients; enable service accounts
-- **Realm management**: create realms
+- **Realm management**: create, get, update, delete realms
 - **Group management**: create/delete groups, add/remove users
 - **Session management**: get active sessions, revoke a session, logout all devices
 - **Resilience**: built-in retry policy via `Microsoft.Extensions.Http.Resilience`
@@ -146,6 +146,7 @@ Or use `IGroupManagement` to organize users into groups:
 - [User Management](docs/user-management.md)
 - [Role Management](docs/role-management.md)
 - [Client Management](docs/client-management.md)
+- [Realm Management](docs/realm-management.md)
 - [Group Management](docs/group-management.md)
 - [Session Management](docs/session-management.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
