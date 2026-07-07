@@ -153,4 +153,27 @@ public static class TestData
         """;
 
     public static string UserSessionsResponse => $"[{UserSessionResponse}]";
+
+    public const string RealmId          = "realm-id-xyz";
+    public const string RealmDisplayName = "Test Realm";
+
+    public static string RealmResponse => $$"""
+        {
+            "id": "{{RealmId}}",
+            "realm": "{{RealmName}}",
+            "displayName": "{{RealmDisplayName}}",
+            "enabled": true,
+            "sslRequired": "external",
+            "registrationAllowed": false,
+            "loginWithEmailAllowed": true,
+            "resetPasswordAllowed": false,
+            "editUsernameAllowed": false,
+            "verifyEmail": false,
+            "rememberMe": false,
+            "bruteForceProtected": false,
+            "accessTokenLifespan": 300
+        }
+        """;
+
+    public static string RealmsResponse => $"[{RealmResponse}]";
 }
