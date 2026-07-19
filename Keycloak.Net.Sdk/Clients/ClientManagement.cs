@@ -111,4 +111,54 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
         return await response.HandleResponseAsync();
     }
 
+    public async Task<KeycloakBaseResponse<List<ProtocolMapperResponseDto>>> GetProtocolMappersAsync(string clientUuid, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientUuid}/protocol-mappers/models", UriKind.Relative);
+
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync<List<ProtocolMapperResponseDto>>();
+    }
+
+    public async Task<KeycloakBaseResponse<ProtocolMapperResponseDto>> GetProtocolMapperAsync(string clientUuid, string mapperId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientUuid}/protocol-mappers/models/{mapperId}", UriKind.Relative);
+
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync<ProtocolMapperResponseDto>();
+    }
+
+    public async Task<KeycloakBaseResponse> CreateProtocolMapperAsync(string clientUuid, CreateProtocolMapperRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientUuid}/protocol-mappers/models", UriKind.Relative);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> UpdateProtocolMapperAsync(string clientUuid, string mapperId, UpdateProtocolMapperRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientUuid}/protocol-mappers/models/{mapperId}", UriKind.Relative);
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> DeleteProtocolMapperAsync(string clientUuid, string mapperId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientUuid}/protocol-mappers/models/{mapperId}", UriKind.Relative);
+
+        var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
 }

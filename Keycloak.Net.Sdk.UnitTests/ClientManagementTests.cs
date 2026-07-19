@@ -172,4 +172,96 @@ public class ClientManagementTests
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
         Assert.Contains("\"serviceAccountsEnabled\":true", body);
     }
+
+    // ── GetProtocolMappersAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetProtocolMappersAsync_Success_ReturnsMapperList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ProtocolMappersResponse);
+
+        var result = await sut.GetProtocolMappersAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Equal(TestData.ProtocolMapperName, result.Response[0].Name);
+        Assert.Contains($"clients/{TestData.ClientUuid}/protocol-mappers/models", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── GetProtocolMapperAsync ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetProtocolMapperAsync_Success_ReturnsMapper()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ProtocolMapperResponse);
+
+        var result = await sut.GetProtocolMapperAsync(TestData.ClientUuid, TestData.ProtocolMapperId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(TestData.ProtocolMapperName, result.Response.Name);
+        Assert.Contains($"protocol-mappers/models/{TestData.ProtocolMapperId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── CreateProtocolMapperAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateProtocolMapperAsync_Success_SendsCorrectRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.Created);
+
+        var request = new CreateProtocolMapperRequestDto
+        {
+            Name = "new-mapper",
+            ProtocolMapper = "oidc-usermodel-attribute-mapper",
+            Config = new Dictionary<string, string> { ["user.attribute"] = "department" }
+        };
+        var result = await sut.CreateProtocolMapperAsync(TestData.ClientUuid, request);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Post, handler.SentRequests[0].Method);
+        Assert.Contains($"clients/{TestData.ClientUuid}/protocol-mappers/models", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("new-mapper", body);
+    }
+
+    // ── UpdateProtocolMapperAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateProtocolMapperAsync_Success_SendsPutRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var request = new UpdateProtocolMapperRequestDto
+        {
+            Id = TestData.ProtocolMapperId,
+            Name = "updated-mapper",
+            ProtocolMapper = "oidc-usermodel-attribute-mapper"
+        };
+        var result = await sut.UpdateProtocolMapperAsync(TestData.ClientUuid, TestData.ProtocolMapperId, request);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
+        Assert.Contains($"protocol-mappers/models/{TestData.ProtocolMapperId}", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains("updated-mapper", body);
+    }
+
+    // ── DeleteProtocolMapperAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteProtocolMapperAsync_Success_SendsDeleteRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.DeleteProtocolMapperAsync(TestData.ClientUuid, TestData.ProtocolMapperId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains(TestData.ProtocolMapperId, handler.SentRequests[0].RequestUri!.ToString());
+    }
 }

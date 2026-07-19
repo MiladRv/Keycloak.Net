@@ -386,6 +386,61 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
         var afterDelete = await Client.GetClientScopeAsync(found.Id);
         Assert.False(afterDelete.IsSuccessful);
     }
+
+    [Fact]
+    public async Task ProtocolMapperCrud_WorksRoundTrip()
+    {
+        var mapperName = $"temp-mapper-{Guid.NewGuid():N}";
+
+        // Create
+        var created = await Client.CreateProtocolMapperAsync(fixture.SdkClientUuid, new CreateProtocolMapperRequestDto
+        {
+            Name = mapperName,
+            ProtocolMapper = "oidc-usermodel-attribute-mapper",
+            Config = new Dictionary<string, string>
+            {
+                ["user.attribute"] = "department",
+                ["claim.name"]     = "department",
+                ["jsonType.label"] = "String"
+            }
+        });
+        Assert.True(created.IsSuccessful);
+
+        // Find the created mapper's id
+        var mappers = await Client.GetProtocolMappersAsync(fixture.SdkClientUuid);
+        var found   = mappers.Response.FirstOrDefault(m => m.Name == mapperName);
+        Assert.NotNull(found);
+
+        // Get by id
+        var fetched = await Client.GetProtocolMapperAsync(fixture.SdkClientUuid, found.Id);
+        Assert.True(fetched.IsSuccessful);
+        Assert.Equal(mapperName, fetched.Response.Name);
+
+        // Update
+        var updated = await Client.UpdateProtocolMapperAsync(fixture.SdkClientUuid, found.Id, new UpdateProtocolMapperRequestDto
+        {
+            Id = found.Id,
+            Name = mapperName,
+            ProtocolMapper = "oidc-usermodel-attribute-mapper",
+            Config = new Dictionary<string, string>
+            {
+                ["user.attribute"] = "team",
+                ["claim.name"]     = "team",
+                ["jsonType.label"] = "String"
+            }
+        });
+        Assert.True(updated.IsSuccessful);
+
+        var refetched = await Client.GetProtocolMapperAsync(fixture.SdkClientUuid, found.Id);
+        Assert.Equal("team", refetched.Response.Config["user.attribute"]);
+
+        // Delete
+        var deleted = await Client.DeleteProtocolMapperAsync(fixture.SdkClientUuid, found.Id);
+        Assert.True(deleted.IsSuccessful);
+
+        var afterDelete = await Client.GetProtocolMapperAsync(fixture.SdkClientUuid, found.Id);
+        Assert.False(afterDelete.IsSuccessful);
+    }
 }
 
 [Collection(nameof(KeycloakCollection))]

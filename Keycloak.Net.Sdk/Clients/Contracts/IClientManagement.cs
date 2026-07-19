@@ -13,4 +13,9 @@ public interface IClientManagement
     Task<KeycloakBaseResponse> CreateClientAsync(CreateClientRequestDto requestDto, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteClientAsync(string clientId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<List<ProtocolMapperResponseDto>>> GetProtocolMappersAsync(string clientUuid, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<ProtocolMapperResponseDto>> GetProtocolMapperAsync(string clientUuid, string mapperId, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> CreateProtocolMapperAsync(string clientUuid, CreateProtocolMapperRequestDto requestDto, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> UpdateProtocolMapperAsync(string clientUuid, string mapperId, UpdateProtocolMapperRequestDto requestDto, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> DeleteProtocolMapperAsync(string clientUuid, string mapperId, CancellationToken cancellationToken = default);
 }
