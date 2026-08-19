@@ -264,4 +264,96 @@ public class ClientManagementTests
         Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
         Assert.Contains(TestData.ProtocolMapperId, handler.SentRequests[0].RequestUri!.ToString());
     }
+
+    // ── GetDefaultClientScopesAsync ───────────────────────────────────────────
+
+    [Fact]
+    public async Task GetDefaultClientScopesAsync_Success_ReturnsScopeList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
+
+        var result = await sut.GetDefaultClientScopesAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Contains($"clients/{TestData.ClientUuid}/default-client-scopes", handler.SentRequests[0].RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+    }
+
+    // ── AddDefaultClientScopeAsync ────────────────────────────────────────────
+
+    [Fact]
+    public async Task AddDefaultClientScopeAsync_Success_SendsPutRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.AddDefaultClientScopeAsync(TestData.ClientUuid, TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
+        Assert.Contains($"clients/{TestData.ClientUuid}/default-client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── RemoveDefaultClientScopeAsync ─────────────────────────────────────────
+
+    [Fact]
+    public async Task RemoveDefaultClientScopeAsync_Success_SendsDeleteRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.RemoveDefaultClientScopeAsync(TestData.ClientUuid, TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains($"clients/{TestData.ClientUuid}/default-client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── GetOptionalClientScopesAsync ──────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOptionalClientScopesAsync_Success_ReturnsScopeList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
+
+        var result = await sut.GetOptionalClientScopesAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Contains($"clients/{TestData.ClientUuid}/optional-client-scopes", handler.SentRequests[0].RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+    }
+
+    // ── AddOptionalClientScopeAsync ───────────────────────────────────────────
+
+    [Fact]
+    public async Task AddOptionalClientScopeAsync_Success_SendsPutRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.AddOptionalClientScopeAsync(TestData.ClientUuid, TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
+        Assert.Contains($"clients/{TestData.ClientUuid}/optional-client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    // ── RemoveOptionalClientScopeAsync ────────────────────────────────────────
+
+    [Fact]
+    public async Task RemoveOptionalClientScopeAsync_Success_SendsDeleteRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.RemoveOptionalClientScopeAsync(TestData.ClientUuid, TestData.ClientScopeId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains($"clients/{TestData.ClientUuid}/optional-client-scopes/{TestData.ClientScopeId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
 }

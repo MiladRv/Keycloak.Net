@@ -61,6 +61,23 @@ await clients.UpdateClientScopeAsync(scopeId, new UpdateClientScopeRequestDto
 await clients.DeleteClientScopeAsync(scopeId);
 ```
 
+### Default / Optional Client Scopes
+
+Assign a realm-level client scope to a specific client, either as a default
+scope (always included) or an optional scope (must be requested).
+
+```csharp
+// Default scopes
+var defaultScopes = await clients.GetDefaultClientScopesAsync(clientUuid);
+await clients.AddDefaultClientScopeAsync(clientUuid, scopeId);
+await clients.RemoveDefaultClientScopeAsync(clientUuid, scopeId);
+
+// Optional scopes
+var optionalScopes = await clients.GetOptionalClientScopesAsync(clientUuid);
+await clients.AddOptionalClientScopeAsync(clientUuid, scopeId);
+await clients.RemoveOptionalClientScopeAsync(clientUuid, scopeId);
+```
+
 ## Protocol Mappers
 
 Protocol mappers control which claims and assertions end up in a client's
