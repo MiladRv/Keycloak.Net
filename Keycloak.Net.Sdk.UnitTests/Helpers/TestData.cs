@@ -195,4 +195,17 @@ public static class TestData
         """;
 
     public static string RealmsResponse => $"[{RealmResponse}]";
+
+    public const string CredentialId = "credential-id-abc";
+
+    public static string CredentialResponse => $$"""
+        {
+            "id": "{{CredentialId}}",
+            "type": "password",
+            "userLabel": "My password",
+            "createdDate": 1700000000000
+        }
+        """;
+
+    public static string CredentialsResponse => $"[{CredentialResponse}]";
 }

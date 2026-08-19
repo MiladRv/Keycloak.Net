@@ -96,7 +96,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
     }
 
-    public async Task SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/reset-password", UriKind.Relative);
 
@@ -112,23 +112,23 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return await response.HandleResponseAsync();
     }
 
-    public async Task DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
         var response = await _httpClient.DeleteAsync(uri, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return await response.HandleResponseAsync();
     }
 
-    public async Task EnableUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> EnableUserAsync(string userId, CancellationToken cancellationToken = default)
         => await UpdateUserEnabledStatus(userId, true, cancellationToken);
 
-    public async Task DisableUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> DisableUserAsync(string userId, CancellationToken cancellationToken = default)
         => await UpdateUserEnabledStatus(userId, false, cancellationToken);
 
-    private async Task UpdateUserEnabledStatus(string userId, bool enabled, CancellationToken cancellationToken = default)
+    private async Task<KeycloakBaseResponse> UpdateUserEnabledStatus(string userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
         var payload = new { enabled };
@@ -139,10 +139,10 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return await response.HandleResponseAsync();
     }
 
-    public async Task UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
 
@@ -152,7 +152,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         };
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return await response.HandleResponseAsync();
     }
 
     public async Task<KeycloakBaseResponse<Dictionary<string, List<string>>>> GetUserAttributesAsync(string userId, CancellationToken cancellationToken = default)
@@ -165,11 +165,11 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return new KeycloakBaseResponse<Dictionary<string, List<string>>>(attributes, true, result.StatusCode);
     }
 
-    public async Task SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default)
     {
         var existing = await GetUserAsync(userId, cancellationToken);
         if (!existing.IsSuccessful)
-            throw new HttpRequestException($"Failed to get user {userId}: {existing.ErrorMessage}", null, existing.StatusCode);
+            return new KeycloakFailureResponse(existing.StatusCode, existing.ErrorMessage);
 
         var attributes = existing.Response.Attributes ?? new Dictionary<string, List<string>>();
         attributes[key] = [value];
@@ -183,7 +183,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        return await response.HandleResponseAsync();
     }
 
     public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersByEmailAsync(string email, CancellationToken cancellationToken = default)
@@ -193,5 +193,23 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
+    }
+
+    // ── Credentials ───────────────────────────────────────────────────────────
+
+    public async Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/credentials", UriKind.Relative);
+
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync<List<CredentialResponseDto>>();
+    }
+
+    public async Task<KeycloakBaseResponse> DeleteUserCredentialAsync(string userId, string credentialId, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/credentials/{credentialId}", UriKind.Relative);
+
+        var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync();
     }
 }
