@@ -4,6 +4,11 @@ All notable changes to `Keycloak.Net.Sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.0] - 2026-08-21
+
+### Added
+- .NET 9 support alongside the existing .NET 8 and .NET 10 targets
+
 ## [1.7.0] - 2026-08-20
 
 ### Added

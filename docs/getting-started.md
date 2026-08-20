@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- .NET 8 or .NET 10
+- .NET 8, .NET 9, or .NET 10
 - A running Keycloak server (v21+)
 - A confidential client with **Service Accounts Enabled**
 

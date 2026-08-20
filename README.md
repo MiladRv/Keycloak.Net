@@ -7,7 +7,7 @@
 [![Release Aspire](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A modular .NET SDK for the **Keycloak Admin REST API**: typed interfaces, built-in retry, auto-attached Bearer tokens, and first-class **.NET Aspire** support. Targets **.NET 8** and **.NET 10**.
+A modular .NET SDK for the **Keycloak Admin REST API**: typed interfaces, built-in retry, auto-attached Bearer tokens, and first-class **.NET Aspire** support. Targets **.NET 8**, **.NET 9**, and **.NET 10**.
 
 ---
 
