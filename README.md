@@ -150,6 +150,7 @@ Or use `IGroupManagement` to organize users into groups:
 - [Group Management](docs/group-management.md)
 - [Session Management](docs/session-management.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
+- [Changelog](CHANGELOG.md)
 
 ---
 
