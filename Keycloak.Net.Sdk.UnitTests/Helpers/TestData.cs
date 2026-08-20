@@ -154,6 +154,25 @@ public static class TestData
 
     public static string UserSessionsResponse => $"[{UserSessionResponse}]";
 
+    public const string ProtocolMapperId   = "mapper-id-1";
+    public const string ProtocolMapperName = "test-mapper";
+
+    public static string ProtocolMapperResponse => $$"""
+        {
+            "id": "{{ProtocolMapperId}}",
+            "name": "{{ProtocolMapperName}}",
+            "protocol": "openid-connect",
+            "protocolMapper": "oidc-usermodel-attribute-mapper",
+            "consentRequired": false,
+            "config": {
+                "user.attribute": "department",
+                "claim.name": "department"
+            }
+        }
+        """;
+
+    public static string ProtocolMappersResponse => $"[{ProtocolMapperResponse}]";
+
     public const string RealmId          = "realm-id-xyz";
     public const string RealmDisplayName = "Test Realm";
 
@@ -176,4 +195,17 @@ public static class TestData
         """;
 
     public static string RealmsResponse => $"[{RealmResponse}]";
+
+    public const string CredentialId = "credential-id-abc";
+
+    public static string CredentialResponse => $$"""
+        {
+            "id": "{{CredentialId}}",
+            "type": "password",
+            "userLabel": "My password",
+            "createdDate": 1700000000000
+        }
+        """;
+
+    public static string CredentialsResponse => $"[{CredentialResponse}]";
 }

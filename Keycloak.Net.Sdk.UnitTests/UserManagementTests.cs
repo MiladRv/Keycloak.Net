@@ -149,8 +149,9 @@ public class UserManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.SetUserPasswordAsync(TestData.UserId, "newPassword!");
+        var result = await sut.SetUserPasswordAsync(TestData.UserId, "newPassword!");
 
+        Assert.True(result.IsSuccessful);
         Assert.Contains($"users/{TestData.UserId}/reset-password", handler.SentRequests[0].RequestUri!.ToString());
         Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
@@ -166,8 +167,9 @@ public class UserManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.DeleteUserAsync(TestData.UserId);
+        var result = await sut.DeleteUserAsync(TestData.UserId);
 
+        Assert.True(result.IsSuccessful);
         Assert.Contains($"users/{TestData.UserId}", handler.SentRequests[0].RequestUri!.ToString());
         Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
     }
@@ -180,8 +182,9 @@ public class UserManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.EnableUserAsync(TestData.UserId);
+        var result = await sut.EnableUserAsync(TestData.UserId);
 
+        Assert.True(result.IsSuccessful);
         Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
         Assert.Contains("\"enabled\":true", body);
@@ -193,8 +196,9 @@ public class UserManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.DisableUserAsync(TestData.UserId);
+        var result = await sut.DisableUserAsync(TestData.UserId);
 
+        Assert.True(result.IsSuccessful);
         Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
         Assert.Contains("\"enabled\":false", body);
@@ -298,13 +302,14 @@ public class UserManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.UpdateUserAsync(TestData.UserId, new UpdateUserRequestDto
+        var result = await sut.UpdateUserAsync(TestData.UserId, new UpdateUserRequestDto
         {
             Email     = "new@example.com",
             FirstName = "John",
             LastName  = "Doe"
         });
 
+        Assert.True(result.IsSuccessful);
         Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
         Assert.Contains($"users/{TestData.UserId}", handler.SentRequests[0].RequestUri!.ToString());
         var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
@@ -374,8 +379,9 @@ public class UserManagementTests
         handler.AddResponse(HttpStatusCode.OK, TestData.UserInfoResponse);
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        await sut.SetUserAttributeAsync(TestData.UserId, "tenantId", "tenant-abc");
+        var result = await sut.SetUserAttributeAsync(TestData.UserId, "tenantId", "tenant-abc");
 
+        Assert.True(result.IsSuccessful);
         Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
         Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
         var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
@@ -424,5 +430,75 @@ public class UserManagementTests
 
         Assert.True(result.IsSuccessful);
         Assert.Empty(result.Response);
+    }
+
+    // ── SetUserAttributeAsync failure ────────────────────────────────────────
+
+    [Fact]
+    public async Task SetUserAttributeAsync_UserNotFound_ReturnsFailureWithoutPutting()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.SetUserAttributeAsync("nonexistent-id", "tenantId", "tenant-abc");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Single(handler.SentRequests);
+    }
+
+    // ── GetUserCredentialsAsync ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUserCredentialsAsync_Success_ReturnsCredentialList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.CredentialsResponse);
+
+        var result = await sut.GetUserCredentialsAsync(TestData.UserId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Equal(TestData.CredentialId, result.Response[0].Id);
+        Assert.Equal("password", result.Response[0].Type);
+        Assert.Contains($"users/{TestData.UserId}/credentials", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetUserCredentialsAsync_UserNotFound_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.GetUserCredentialsAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    // ── DeleteUserCredentialAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteUserCredentialAsync_Success_SendsDeleteRequest()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.DeleteUserCredentialAsync(TestData.UserId, TestData.CredentialId);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains($"users/{TestData.UserId}/credentials/{TestData.CredentialId}", handler.SentRequests[0].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task DeleteUserCredentialAsync_NotFound_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.DeleteUserCredentialAsync(TestData.UserId, "nonexistent-credential");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
     }
 }

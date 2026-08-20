@@ -69,6 +69,46 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync();
     }
 
+    // ── Client Role Composites ───────────────────────────────────────────────────
+
+    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoleCompositesAsync(string roleName, CancellationToken cancellationToken = default)
+    {
+        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        return await response.HandleResponseAsync<List<ClientRoleResponseDto>>();
+    }
+
+    public async Task<KeycloakBaseResponse> AddClientRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default)
+    {
+        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(composites), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse> RemoveClientRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default)
+    {
+        var requestUrl = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites", UriKind.Relative);
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, requestUrl)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(composites), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        return await response.HandleResponseAsync();
+    }
+
     // ── Realm Roles ───────────────────────────────────────────────────────────
 
     public async Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetRealmRolesAsync(CancellationToken cancellationToken = default)

@@ -55,3 +55,11 @@ await users.SetPasswordAsync(userId, "NewPass@456");
 ```csharp
 await users.DeleteUserAsync(userId);
 ```
+
+## Credentials
+
+```csharp
+var credentials = await users.GetUserCredentialsAsync(userId);
+
+await users.DeleteUserCredentialAsync(userId, credentials.Response[0].Id);
+```

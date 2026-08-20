@@ -30,6 +30,7 @@ public class KeycloakFixture : IAsyncLifetime
     public string           TestRoleId        { get; private set; } = null!;
     public string           TestGroupId       { get; private set; } = null!;
     public string           TestRealmRoleId   { get; private set; } = null!;
+    public string           SdkClientUuid     { get; private set; } = null!;
     public const string     TestRoleName      = "sdk-test-role";
     public const string     TestRealmRoleName = "sdk-test-realm-role";
     public const string     TestGroupName     = "sdk-test-group";
@@ -58,6 +59,7 @@ public class KeycloakFixture : IAsyncLifetime
         // 3. Create SDK client (confidential + service accounts)
         var clientUuid  = await CreateClientAsync(http, adminToken, Realm, SdkClientId);
         var clientSecret = await GetClientSecretAsync(http, adminToken, Realm, clientUuid);
+        SdkClientUuid = clientUuid;
 
         // 4. Give service account realm-admin role
         await AssignRealmAdminToServiceAccountAsync(http, adminToken, Realm, clientUuid, SdkClientId);

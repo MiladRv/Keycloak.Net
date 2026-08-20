@@ -90,6 +90,60 @@ public class RoleManagementTests
         Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
     }
 
+    // ── GetClientRoleCompositesAsync ──────────────────────────────────────────
+
+    [Fact]
+    public async Task GetClientRoleCompositesAsync_Success_ReturnsCompositeList()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientRolesResponse);
+
+        var result = await sut.GetClientRoleCompositesAsync(TestData.RoleName);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Single(result.Response);
+        Assert.Equal(TestData.RoleId, result.Response[0].Id);
+        Assert.Contains($"roles/{TestData.RoleName}/composites", handler.SentRequests[0].RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+    }
+
+    // ── AddClientRoleCompositesAsync ──────────────────────────────────────────
+
+    [Fact]
+    public async Task AddClientRoleCompositesAsync_Success_SendsPostWithCompositeBody()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var composites = new List<CompositeRoleRequestDto> { new() { Id = TestData.RoleId, Name = TestData.RoleName } };
+        var result = await sut.AddClientRoleCompositesAsync(TestData.RoleName, composites);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Post, handler.SentRequests[0].Method);
+        Assert.Contains($"roles/{TestData.RoleName}/composites", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains(TestData.RoleId, body);
+        Assert.Contains(TestData.RoleName, body);
+    }
+
+    // ── RemoveClientRoleCompositesAsync ───────────────────────────────────────
+
+    [Fact]
+    public async Task RemoveClientRoleCompositesAsync_Success_SendsDeleteWithCompositeBody()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var composites = new List<CompositeRoleRequestDto> { new() { Id = TestData.RoleId, Name = TestData.RoleName } };
+        var result = await sut.RemoveClientRoleCompositesAsync(TestData.RoleName, composites);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Delete, handler.SentRequests[0].Method);
+        Assert.Contains($"roles/{TestData.RoleName}/composites", handler.SentRequests[0].RequestUri!.ToString());
+        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Contains(TestData.RoleId, body);
+    }
+
     // ── GetRealmRolesAsync ────────────────────────────────────────────────────
 
     [Fact]

@@ -19,6 +19,28 @@ await roles.AssignClientRoleToUser(userId, roleId);
 await roles.RemoveClientRoleFromUser(userId, roleId);
 ```
 
+### Composite Client Roles
+
+A composite role bundles other roles so that assigning it grants all of its
+composites too.
+
+```csharp
+// Get the composite roles that make up a client role
+var composites = await roles.GetClientRoleCompositesAsync(roleName);
+
+// Add composites to a client role
+await roles.AddClientRoleCompositesAsync(roleName,
+[
+    new CompositeRoleRequestDto { Id = otherRoleId, Name = otherRoleName }
+]);
+
+// Remove composites from a client role
+await roles.RemoveClientRoleCompositesAsync(roleName,
+[
+    new CompositeRoleRequestDto { Id = otherRoleId, Name = otherRoleName }
+]);
+```
+
 ## Realm Roles
 
 ```csharp
