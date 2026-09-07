@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - **Breaking:** renamed `IClientManagement.GetClientScopes`, `IRoleManagement.GetClientRoles`, and `IRoleManagement.AssignClientRoleToUser` to `GetClientScopesAsync`, `GetClientRolesAsync`, and `AssignClientRoleToUserAsync` respectively, for consistency with every other async method in the SDK.
+- `IRealmManagement` operations used to fetch a fresh admin access token (via the admin username/password) on every single call. Added `IRealmAdminTokenProvider`, registered as a singleton, which caches that token in memory for its lifetime and shares it across all realm operations - mirroring the existing `ITokenProvider` pattern used for the SDK's regular client. `RealmManagement`'s constructor no longer takes `IOptions<KeycloakConfiguration>` directly; if you constructed it manually instead of through `AddKeycloak`, pass an `IRealmAdminTokenProvider` instead.
 
 ### Fixed
 - A successful response with an empty body (e.g. a `204 No Content`, or a `200` with nothing written to it) used to throw an unhandled `JsonException` when the SDK tried to deserialize it. It now returns a default, empty value for that response type instead.

@@ -7,6 +7,7 @@ using Keycloak.Net.Sdk.Extensions;
 using Keycloak.Net.Sdk.Groups;
 using Keycloak.Net.Sdk.Groups.Contracts;
 using Keycloak.Net.Sdk.Realms;
+using Keycloak.Net.Sdk.Realms.Contracts;
 using Keycloak.Net.Sdk.Roles;
 using Keycloak.Net.Sdk.Roles.Contracts;
 using Keycloak.Net.Sdk.UserSessions;
@@ -36,6 +37,7 @@ public static class ServiceRegistrations
 
         // Register TokenCache
         services.AddSingleton<ITokenProvider, TokenProvider>();
+        services.AddSingleton<IRealmAdminTokenProvider, RealmAdminTokenProvider>();
 
         // Register DelegatingHandler
         services.AddTransient<KeycloakAuthHandler>();
