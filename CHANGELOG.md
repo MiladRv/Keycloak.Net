@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - A successful response with an empty body (e.g. a `204 No Content`, or a `200` with nothing written to it) used to throw an unhandled `JsonException` when the SDK tried to deserialize it. It now returns a default, empty value for that response type instead.
+- `RevokeTokenAsync` duplicated the shared response-handling logic by hand instead of reusing `HandleResponseAsync`, and used the raw response body as the error message on failure while every other method used the HTTP reason phrase. Both `HandleResponseAsync` overloads now prefer the response body for the error message (falling back to the reason phrase when the body is empty), and `RevokeTokenAsync` goes through the shared helper like everything else.
+- Fixed mangled comment separators (`──`, `↔`) in a few files left over from the `Athentications` → `Authentications` rename in 1.9.0 - a text-encoding mistake on my part, comments only, no functional impact.
 
 ## [1.9.0] - 2026-09-07
 

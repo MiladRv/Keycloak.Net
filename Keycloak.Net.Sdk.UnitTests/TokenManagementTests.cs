@@ -24,7 +24,7 @@ public class TokenManagementTests
         return (new TokenManagement(factory, _options), handler);
     }
 
-    // â”€â”€ RefreshTokenAsync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── RefreshTokenAsync ────────────────────────────────────────────────────
 
     [Fact]
     public async Task RefreshTokenAsync_Success_ReturnsNewTokens()
@@ -53,7 +53,19 @@ public class TokenManagementTests
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
     }
 
-    // â”€â”€ RevokeTokenAsync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    [Fact]
+    public async Task RefreshTokenAsync_FailureWithErrorBody_UsesBodyAsErrorMessage()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.BadRequest, "{\"error\":\"invalid_grant\"}");
+
+        var result = await sut.RefreshTokenAsync("expired-refresh-token");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Contains("invalid_grant", result.ErrorMessage);
+    }
+
+    // ── RevokeTokenAsync ─────────────────────────────────────────────────────
 
     [Fact]
     public async Task RevokeTokenAsync_Success_ReturnsSuccessResponse()
@@ -81,5 +93,17 @@ public class TokenManagementTests
 
         Assert.False(result.IsSuccessful);
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_FailureWithErrorBody_UsesBodyAsErrorMessage()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.BadRequest, "{\"error\":\"invalid_token\"}");
+
+        var result = await sut.RevokeTokenAsync("invalid-token");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Contains("invalid_token", result.ErrorMessage);
     }
 }
