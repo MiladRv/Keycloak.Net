@@ -150,6 +150,38 @@ public class GroupManagementTests
         Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
     }
 
+    // ── UpdateGroupAsync ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateGroupAsync_Success_GetsThenPutsFullRepresentationWithChangedName()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.GroupResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.UpdateGroupAsync(TestData.GroupId, new UpdateGroupRequestDto { Name = "renamed-group" });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
+        Assert.Contains("\"name\":\"renamed-group\"", body);
+        // Fields not part of the update must survive the round trip
+        Assert.Contains(TestData.GroupPath, body);
+    }
+
+    [Fact]
+    public async Task UpdateGroupAsync_GroupNotFound_ReturnsFailureWithoutPutting()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.UpdateGroupAsync("nonexistent-id", new UpdateGroupRequestDto { Name = "renamed-group" });
+
+        Assert.False(result.IsSuccessful);
+        Assert.Single(handler.SentRequests);
+    }
+
     // ── AddUserToGroupAsync ───────────────────────────────────────────────────
 
     [Fact]

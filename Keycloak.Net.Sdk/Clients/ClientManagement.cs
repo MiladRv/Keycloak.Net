@@ -92,33 +92,47 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
 
         var response = await _httpClient.DeleteAsync(uri, cancellationToken);
-        
+
         return await response.HandleResponseAsync();
     }
 
-    public async Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse<ClientResponseDto>> GetClientAsync(string clientId, CancellationToken cancellationToken = default)
     {
-        var requestUrl = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
+
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync<ClientResponseDto>();
+    }
+
+    public async Task<KeycloakBaseResponse> UpdateClientAsync(string clientId, UpdateClientRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
 
         // Keycloak's client PUT replaces the whole representation, so we fetch it first and
-        // only flip the one field we care about - otherwise every other client setting
-        // (redirect URIs, secret, protocol mappers, ...) would be wiped out.
-        var getResponse = await _httpClient.GetAsync(requestUrl, cancellationToken);
+        // only apply the fields the caller actually provided - otherwise every other client
+        // setting (redirect URIs, secret, protocol mappers, ...) would be wiped out.
+        var getResponse = await _httpClient.GetAsync(uri, cancellationToken);
         if (!getResponse.IsSuccessStatusCode)
             return new KeycloakFailureResponse(getResponse.StatusCode, getResponse.ReasonPhrase);
 
         var existingClient = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
-        existingClient["serviceAccountsEnabled"] = true;
 
-        var request = new HttpRequestMessage(HttpMethod.Put, requestUrl)
+        if (requestDto.Name is not null) existingClient["name"] = requestDto.Name;
+        if (requestDto.Enabled.HasValue) existingClient["enabled"] = requestDto.Enabled.Value;
+        if (requestDto.PublicClient.HasValue) existingClient["publicClient"] = requestDto.PublicClient.Value;
+        if (requestDto.ServiceAccountsEnabled.HasValue) existingClient["serviceAccountsEnabled"] = requestDto.ServiceAccountsEnabled.Value;
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
             Content = new StringContent(existingClient.ToJsonString(), Encoding.UTF8, "application/json")
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-
         return await response.HandleResponseAsync();
     }
+
+    public async Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default)
+        => await UpdateClientAsync(clientId, new UpdateClientRequestDto { ServiceAccountsEnabled = true }, cancellationToken);
 
     public async Task<KeycloakBaseResponse<List<ProtocolMapperResponseDto>>> GetProtocolMappersAsync(string clientUuid, CancellationToken cancellationToken = default)
     {
