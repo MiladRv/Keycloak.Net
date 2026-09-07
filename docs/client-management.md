@@ -31,6 +31,12 @@ var allClients = await clients.GetClientsAsync();
 await clients.EnableServiceAccountAsync(clientUuid);
 ```
 
+This fetches the client's current representation, sets
+`serviceAccountsEnabled` on it, and PUTs the whole thing back - Keycloak's
+`PUT` on a client replaces the full record, so sending only the changed
+field would otherwise wipe out redirect URIs, the client secret, protocol
+mapper config, and everything else on that client.
+
 ## Client Scopes
 
 Client scopes are realm-level resources that group protocol mappers and role
