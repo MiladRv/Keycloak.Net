@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
@@ -48,6 +49,30 @@ public sealed class GroupManagement(IHttpClientFactory httpClientFactory, IOptio
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync<GroupResponseDto>();
+    }
+
+    public async Task<KeycloakBaseResponse> UpdateGroupAsync(string groupId, UpdateGroupRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}", UriKind.Relative);
+
+        // Keycloak's group PUT replaces the whole representation, so we fetch it first and
+        // only apply the fields the caller actually provided - otherwise sub-groups and any
+        // other group data would be wiped out.
+        var getResponse = await _httpClient.GetAsync(uri, cancellationToken);
+        if (!getResponse.IsSuccessStatusCode)
+            return new KeycloakFailureResponse(getResponse.StatusCode, getResponse.ReasonPhrase);
+
+        var existingGroup = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
+
+        if (requestDto.Name is not null) existingGroup["name"] = requestDto.Name;
+
+        var request = new HttpRequestMessage(HttpMethod.Put, uri)
+        {
+            Content = new StringContent(existingGroup.ToJsonString(), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
     }
 
     public async Task<KeycloakBaseResponse> AddUserToGroupAsync(string userId, string groupId, CancellationToken cancellationToken = default)

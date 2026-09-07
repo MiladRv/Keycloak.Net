@@ -12,6 +12,8 @@ public interface IClientManagement
     Task<KeycloakBaseResponse<List<ClientResponseDto>>> GetClientsAsync(CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> CreateClientAsync(CreateClientRequestDto requestDto, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteClientAsync(string clientId, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<ClientResponseDto>> GetClientAsync(string clientId, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> UpdateClientAsync(string clientId, UpdateClientRequestDto requestDto, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<ProtocolMapperResponseDto>>> GetProtocolMappersAsync(string clientUuid, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<ProtocolMapperResponseDto>> GetProtocolMapperAsync(string clientUuid, string mapperId, CancellationToken cancellationToken = default);
