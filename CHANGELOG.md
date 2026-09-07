@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **Breaking:** renamed the `Athentications` namespace/folder (a long-standing typo) to `Authentications`. `Keycloak.Net.Sdk.Athentications.*` types (`ITokenProvider`, `ITokenManagement`, `TokenProvider`, `TokenManagement`, `KeycloakAuthHandler`, `SigninResponseDto`, ...) now live under `Keycloak.Net.Sdk.Authentications.*`. Update any `using` statements referencing the old namespace.
+
 ### Added
 - `GetClientAsync` and `UpdateClientAsync` on `IClientManagement` for fetching and updating a single client by id
 - `UpdateGroupAsync` on `IGroupManagement` for renaming/updating a single group

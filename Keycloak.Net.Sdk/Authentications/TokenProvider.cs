@@ -1,10 +1,10 @@
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace Keycloak.Net.Sdk.Athentications;
+namespace Keycloak.Net.Sdk.Authentications;
 
 public sealed class TokenProvider : ITokenProvider
 {

@@ -1,6 +1,6 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
-namespace Keycloak.Net.Sdk.Athentications.Contracts;
+namespace Keycloak.Net.Sdk.Authentications.Contracts;
 
 public sealed record SigninResponseDto
 {

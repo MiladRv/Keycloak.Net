@@ -1,5 +1,5 @@
 using System.Net;
-using Keycloak.Net.Sdk.Athentications;
+using Keycloak.Net.Sdk.Authentications;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.UnitTests.Helpers;
 using Microsoft.Extensions.Options;
@@ -24,7 +24,7 @@ public class TokenManagementTests
         return (new TokenManagement(factory, _options), handler);
     }
 
-    // ── RefreshTokenAsync ─────────────────────────────────────────────────────
+    // â”€â”€ RefreshTokenAsync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task RefreshTokenAsync_Success_ReturnsNewTokens()
@@ -53,7 +53,7 @@ public class TokenManagementTests
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
     }
 
-    // ── RevokeTokenAsync ──────────────────────────────────────────────────────
+    // â”€â”€ RevokeTokenAsync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task RevokeTokenAsync_Success_ReturnsSuccessResponse()
