@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
@@ -208,7 +208,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    // ── Credentials ───────────────────────────────────────────────────────────
+    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default)
     {

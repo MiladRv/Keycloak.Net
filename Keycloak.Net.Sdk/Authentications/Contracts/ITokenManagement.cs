@@ -1,6 +1,6 @@
 using Keycloak.Net.Sdk.Contracts.Responses;
 
-namespace Keycloak.Net.Sdk.Athentications.Contracts;
+namespace Keycloak.Net.Sdk.Authentications.Contracts;
 
 public interface ITokenManagement
 {

@@ -54,10 +54,10 @@ That's it — all managers are now available via dependency injection.
 
 | Interface | Responsibilities |
 |-----------|-----------------|
-| `IUserManagement` | Sign up, sign in, get, enable/disable, set password, delete |
+| `IUserManagement` | Sign up, sign in, get, update, enable/disable, set password, attributes, credentials, delete |
 | `IRoleManagement` | Client roles & realm roles — get, create, assign/remove |
-| `IClientManagement` | Get, create, delete clients; enable service accounts |
+| `IClientManagement` | Get, create, update, delete clients; scopes; protocol mappers; enable service accounts |
 | `IRealmManagement` | Create, get, update, delete realms |
 | `ITokenManagement` | Get service-account token, revoke token |
-| `IGroupManagement` | Create/delete groups, add/remove users |
+| `IGroupManagement` | Create/update/delete groups, add/remove users |
 | `IUserSessionManagement` | Get active sessions, revoke, logout all |

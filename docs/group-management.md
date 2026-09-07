@@ -31,6 +31,9 @@ await groups.RemoveUserFromGroupAsync(userId, groupId);
 // All groups in the realm
 var allGroups = await groups.GetGroupsAsync();
 
+// A single group by id
+var group = await groups.GetGroupAsync(groupId);
+
 // Groups a specific user belongs to
 var userGroups = await groups.GetUserGroupsAsync(userId);
 ```

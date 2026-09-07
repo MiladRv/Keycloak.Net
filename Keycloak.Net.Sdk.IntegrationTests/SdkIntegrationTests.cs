@@ -1,6 +1,6 @@
 using Keycloak.Net.Sdk.Users.Contracts;
 using Keycloak.Net.Sdk.Roles.Contracts;
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Groups.Contracts;
 using Keycloak.Net.Sdk.Realms;
@@ -540,7 +540,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
     private IRoleManagement  Role  => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IRoleManagement>();
     private IGroupManagement Group => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IGroupManagement>();
 
-    // ── Read ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetRealmRolesAsync_ReturnsCreatedTestRole()
@@ -571,7 +571,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.False(result.IsSuccessful);
     }
 
-    // ── Create / Delete round-trip ────────────────────────────────────────────
+    // â”€â”€ Create / Delete round-trip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task CreateAndDeleteRealmRoleAsync_WorksRoundTrip()
@@ -600,7 +600,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.False(afterDelete.IsSuccessful);
     }
 
-    // ── Realm Role ↔ User ─────────────────────────────────────────────────────
+    // â”€â”€ Realm Role â†” User â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task AssignAndRemoveRealmRoleToUser_WorksRoundTrip()
@@ -638,7 +638,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.DoesNotContain(result.Response, r => r.Id == fixture.TestRealmRoleId);
     }
 
-    // ── Realm Role ↔ Group ────────────────────────────────────────────────────
+    // â”€â”€ Realm Role â†” Group â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task AssignAndRemoveRealmRoleToGroup_WorksRoundTrip()
