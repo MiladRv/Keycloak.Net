@@ -177,31 +177,52 @@ public class UserManagementTests
     // ── EnableUserAsync / DisableUserAsync ────────────────────────────────────
 
     [Fact]
-    public async Task EnableUserAsync_Success_SendsEnabledTrue()
+    public async Task EnableUserAsync_Success_GetsThenPutsFullRepresentationWithEnabledTrue()
     {
         var (sut, handler) = CreateSut();
+        // First call: GET the existing user; second call: PUT it back with "enabled" flipped
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserWithAttributesResponse);
         handler.AddResponse(HttpStatusCode.NoContent);
 
         var result = await sut.EnableUserAsync(TestData.UserId);
 
         Assert.True(result.IsSuccessful);
-        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
-        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
         Assert.Contains("\"enabled\":true", body);
+        // Fields not related to the enabled flag must survive the round trip
+        Assert.Contains(TestData.Username, body);
+        Assert.Contains("department", body);
     }
 
     [Fact]
-    public async Task DisableUserAsync_Success_SendsEnabledFalse()
+    public async Task DisableUserAsync_Success_GetsThenPutsFullRepresentationWithEnabledFalse()
     {
         var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserWithAttributesResponse);
         handler.AddResponse(HttpStatusCode.NoContent);
 
         var result = await sut.DisableUserAsync(TestData.UserId);
 
         Assert.True(result.IsSuccessful);
-        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
-        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
         Assert.Contains("\"enabled\":false", body);
+        Assert.Contains(TestData.Username, body);
+    }
+
+    [Fact]
+    public async Task EnableUserAsync_UserNotFound_ReturnsFailureWithoutPutting()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.EnableUserAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Single(handler.SentRequests);
     }
 
     // ── GetUsersAsync ─────────────────────────────────────────────────────────
@@ -387,6 +408,9 @@ public class UserManagementTests
         var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
         Assert.Contains("tenantId", body);
         Assert.Contains("tenant-abc", body);
+        // The rest of the user representation must survive the round trip
+        Assert.Contains(TestData.Username, body);
+        Assert.Contains("\"enabled\":true", body);
     }
 
     [Fact]

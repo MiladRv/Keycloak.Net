@@ -44,6 +44,12 @@ await users.EnableUserAsync(userId);
 await users.DisableUserAsync(userId);
 ```
 
+Under the hood these (and `SetUserAttributeAsync`) fetch the user's current
+representation first and only flip the field that changed before sending it
+back. Keycloak's `PUT` on a user replaces the whole record, so this round
+trip is what keeps the rest of the user (email, attributes, required
+actions, etc.) intact instead of it getting wiped out.
+
 ## Set Password
 
 ```csharp

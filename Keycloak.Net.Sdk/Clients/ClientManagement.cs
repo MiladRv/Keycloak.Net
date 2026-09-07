@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
@@ -97,13 +98,21 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
 
     public async Task<KeycloakBaseResponse> EnableServiceAccountAsync(string clientId, CancellationToken cancellationToken = default)
     {
-        var requestDto = new UpdateClientStatusRequestDto() { ServiceAccountsEnabled = true };
-
         var requestUrl = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{clientId}", UriKind.Relative);
-        
+
+        // Keycloak's client PUT replaces the whole representation, so we fetch it first and
+        // only flip the one field we care about - otherwise every other client setting
+        // (redirect URIs, secret, protocol mappers, ...) would be wiped out.
+        var getResponse = await _httpClient.GetAsync(requestUrl, cancellationToken);
+        if (!getResponse.IsSuccessStatusCode)
+            return new KeycloakFailureResponse(getResponse.StatusCode, getResponse.ReasonPhrase);
+
+        var existingClient = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
+        existingClient["serviceAccountsEnabled"] = true;
+
         var request = new HttpRequestMessage(HttpMethod.Put, requestUrl)
         {
-            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+            Content = new StringContent(existingClient.ToJsonString(), Encoding.UTF8, "application/json")
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);

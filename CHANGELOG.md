@@ -4,6 +4,11 @@ All notable changes to `Keycloak.Net.Sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- `EnableServiceAccountAsync`, `EnableUserAsync`/`DisableUserAsync`, and `SetUserAttributeAsync` used to `PUT` a partial payload (e.g. just `{ "enabled": true }`) straight to Keycloak's client/user representation endpoint. Since that endpoint replaces the whole record, this could silently wipe out everything else on the client or user (redirect URIs, secret, protocol mappers, other attributes, ...). These methods now fetch the current representation first and merge the change into it before sending it back.
+
 ## [1.8.0] - 2026-08-21
 
 ### Added
