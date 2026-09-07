@@ -13,10 +13,10 @@ configured client (`ClientUuid` in configuration).
 
 ```csharp
 // Get all roles on the configured client
-var clientRoles = await roles.GetClientRoles();
+var clientRoles = await roles.GetClientRolesAsync();
 
 // Assign a client role to a user
-await roles.AssignClientRoleToUser(userId, roleId, roleName);
+await roles.AssignClientRoleToUserAsync(userId, roleId, roleName);
 
 // Remove a client role from a user
 await roles.RemoveClientRoleFromUserAsync(userId, roleId, roleName);

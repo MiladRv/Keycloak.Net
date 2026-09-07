@@ -14,7 +14,7 @@ public class ClientManagement(IHttpClientFactory httpClientFactory, IOptions<Key
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
-    public async Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopes(CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopesAsync(CancellationToken cancellationToken = default)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/client-scopes";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);

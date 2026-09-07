@@ -33,7 +33,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.OK, TestData.ClientRolesResponse);
 
-        var result = await sut.GetClientRoles();
+        var result = await sut.GetClientRolesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Single(result.Response);
@@ -49,7 +49,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.Unauthorized);
 
-        var result = await sut.GetClientRoles();
+        var result = await sut.GetClientRolesAsync();
 
         Assert.False(result.IsSuccessful);
         Assert.Equal(HttpStatusCode.Unauthorized, result.StatusCode);
@@ -63,7 +63,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        var result = await sut.AssignClientRoleToUser(TestData.UserId, TestData.RoleId, TestData.RoleName);
+        var result = await sut.AssignClientRoleToUserAsync(TestData.UserId, TestData.RoleId, TestData.RoleName);
 
         Assert.True(result.IsSuccessful);
         Assert.Contains($"users/{TestData.UserId}/role-mappings/clients/{TestData.ClientUuid}",

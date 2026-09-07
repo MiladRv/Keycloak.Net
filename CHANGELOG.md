@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **Breaking:** renamed `IClientManagement.GetClientScopes`, `IRoleManagement.GetClientRoles`, and `IRoleManagement.AssignClientRoleToUser` to `GetClientScopesAsync`, `GetClientRolesAsync`, and `AssignClientRoleToUserAsync` respectively, for consistency with every other async method in the SDK.
+
 ### Fixed
 - A successful response with an empty body (e.g. a `204 No Content`, or a `200` with nothing written to it) used to throw an unhandled `JsonException` when the SDK tried to deserialize it. It now returns a default, empty value for that response type instead.
 - `RevokeTokenAsync` duplicated the shared response-handling logic by hand instead of reusing `HandleResponseAsync`, and used the raw response body as the error message on failure while every other method used the HTTP reason phrase. Both `HandleResponseAsync` overloads now prefer the response body for the error message (falling back to the reason phrase when the body is empty), and `RevokeTokenAsync` goes through the shared helper like everything else.
