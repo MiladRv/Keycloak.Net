@@ -47,10 +47,7 @@ public class TokenManagement(IHttpClientFactory httpClientFactory, IOptions<Keyc
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        return !response.IsSuccessStatusCode
-            ? new KeycloakFailureResponse(response.StatusCode, content)
-            : new KeycloakBaseResponse(true, response.StatusCode);
+        return await response.HandleResponseAsync();
     }
 }

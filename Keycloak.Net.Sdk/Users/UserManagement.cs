@@ -208,7 +208,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Credentials ───────────────────────────────────────────────────────────
 
     public async Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default)
     {
