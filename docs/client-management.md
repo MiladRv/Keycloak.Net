@@ -19,17 +19,35 @@ await clients.CreateClientAsync(new CreateClientRequestDto
 await clients.DeleteClientAsync(clientUuid);
 ```
 
-## Get Clients
+## Get / Update Clients
 
 ```csharp
 var allClients = await clients.GetClientsAsync();
+var client     = await clients.GetClientAsync(clientUuid);
+
+await clients.UpdateClientAsync(clientUuid, new UpdateClientRequestDto
+{
+    Name    = "Renamed Client",
+    Enabled = true
+});
 ```
+
+`UpdateClientAsync` only touches the fields you set on the DTO - it fetches
+the client first, merges your changes into it, and PUTs the whole thing
+back, so anything you leave `null` (redirect URIs, secret, protocol
+mappers, ...) is left untouched.
 
 ## Enable Service Account
 
 ```csharp
 await clients.EnableServiceAccountAsync(clientUuid);
 ```
+
+This fetches the client's current representation, sets
+`serviceAccountsEnabled` on it, and PUTs the whole thing back - Keycloak's
+`PUT` on a client replaces the full record, so sending only the changed
+field would otherwise wipe out redirect URIs, the client secret, protocol
+mapper config, and everything else on that client.
 
 ## Client Scopes
 

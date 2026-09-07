@@ -1,4 +1,4 @@
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 
 namespace Keycloak.Net.Sdk.Users.Contracts;
@@ -19,7 +19,7 @@ public interface IUserManagement
     Task<KeycloakBaseResponse> SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    // ── Credentials ───────────────────────────────────────────────────────────
+    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteUserCredentialAsync(string userId, string credentialId, CancellationToken cancellationToken = default);
 }

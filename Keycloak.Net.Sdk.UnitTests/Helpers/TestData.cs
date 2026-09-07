@@ -91,18 +91,20 @@ public static class TestData
         }
         """;
 
-    public static string ClientsResponse => """
-        [
-            {
-                "id": "client-abc",
-                "clientId": "test-client",
-                "name": "Test Client",
-                "enabled": true,
-                "publicClient": false,
-                "serviceAccountsEnabled": true
-            }
-        ]
+    public static string ClientResponse => """
+        {
+            "id": "client-abc",
+            "clientId": "test-client",
+            "name": "Test Client",
+            "enabled": true,
+            "publicClient": false,
+            "serviceAccountsEnabled": true,
+            "redirectUris": ["https://example.com/callback"],
+            "secret": "super-secret"
+        }
         """;
+
+    public static string ClientsResponse => $"[{ClientResponse}]";
 
     public const string GroupId   = "group-id-abc";
     public const string GroupName = "test-group";

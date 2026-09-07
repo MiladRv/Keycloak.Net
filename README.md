@@ -192,7 +192,7 @@ dotnet test
 
 ```
 Keycloak.Net.Sdk/                  # SDK source
-├── Athentications/                # TokenProvider, TokenManagement, KeycloakAuthHandler
+├── Authentications/               # TokenProvider, TokenManagement, KeycloakAuthHandler
 ├── Clients/                       # ClientManagement + DTOs
 ├── Configurations/                # KeycloakConfiguration
 ├── Contracts/                     # Shared response types (KeycloakBaseResponse)

@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;

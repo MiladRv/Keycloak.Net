@@ -157,20 +157,113 @@ public class ClientManagementTests
         Assert.Contains(TestData.ClientUuid, handler.SentRequests[0].RequestUri!.ToString());
     }
 
+    // ── GetClientAsync ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetClientAsync_Success_ReturnsClient()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientResponse);
+
+        var result = await sut.GetClientAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("test-client", result.Response.ClientId);
+        Assert.Contains($"clients/{TestData.ClientUuid}", handler.SentRequests[0].RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+    }
+
+    [Fact]
+    public async Task GetClientAsync_NotFound_ReturnsFailureResponse()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.GetClientAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    // ── UpdateClientAsync ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateClientAsync_Success_GetsThenPutsFullRepresentationWithChangedFields()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await sut.UpdateClientAsync(TestData.ClientUuid, new UpdateClientRequestDto { Name = "Renamed Client" });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
+        Assert.Contains("\"name\":\"Renamed Client\"", body);
+        // Fields not part of the update must survive the round trip
+        Assert.Contains("redirectUris", body);
+        Assert.Contains("super-secret", body);
+    }
+
+    [Fact]
+    public async Task UpdateClientAsync_OnlySendsProvidedFields()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.UpdateClientAsync(TestData.ClientUuid, new UpdateClientRequestDto { PublicClient = true });
+
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
+        Assert.Contains("\"publicClient\":true", body);
+        Assert.Contains("\"name\":\"Test Client\"", body);
+    }
+
+    [Fact]
+    public async Task UpdateClientAsync_ClientNotFound_ReturnsFailureWithoutPutting()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.UpdateClientAsync("nonexistent-id", new UpdateClientRequestDto { Name = "New Name" });
+
+        Assert.False(result.IsSuccessful);
+        Assert.Single(handler.SentRequests);
+    }
+
     // ── EnableServiceAccountAsync ─────────────────────────────────────────────
 
     [Fact]
-    public async Task EnableServiceAccountAsync_Success_SendsPutWithServiceAccountsEnabled()
+    public async Task EnableServiceAccountAsync_Success_GetsThenPutsFullRepresentationWithServiceAccountsEnabled()
     {
         var (sut, handler) = CreateSut();
+        // First call: GET the existing client; second call: PUT it back with the flag flipped
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientResponse);
         handler.AddResponse(HttpStatusCode.NoContent);
 
         var result = await sut.EnableServiceAccountAsync(TestData.ClientUuid);
 
         Assert.True(result.IsSuccessful);
-        Assert.Equal(HttpMethod.Put, handler.SentRequests[0].Method);
-        var body = await handler.SentRequests[0].Content!.ReadAsStringAsync();
+        Assert.Equal(HttpMethod.Get, handler.SentRequests[0].Method);
+        Assert.Equal(HttpMethod.Put, handler.SentRequests[1].Method);
+        var body = await handler.SentRequests[1].Content!.ReadAsStringAsync();
         Assert.Contains("\"serviceAccountsEnabled\":true", body);
+        // Fields not related to the service account flag must survive the round trip
+        Assert.Contains("redirectUris", body);
+        Assert.Contains("super-secret", body);
+    }
+
+    [Fact]
+    public async Task EnableServiceAccountAsync_ClientNotFound_ReturnsFailureWithoutPutting()
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.NotFound);
+
+        var result = await sut.EnableServiceAccountAsync("nonexistent-id");
+
+        Assert.False(result.IsSuccessful);
+        Assert.Single(handler.SentRequests);
     }
 
     // ── GetProtocolMappersAsync ───────────────────────────────────────────────

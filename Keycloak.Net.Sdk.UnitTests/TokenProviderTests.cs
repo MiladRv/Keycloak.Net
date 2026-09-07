@@ -1,5 +1,5 @@
 using System.Net;
-using Keycloak.Net.Sdk.Athentications;
+using Keycloak.Net.Sdk.Authentications;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.UnitTests.Helpers;
 using Microsoft.Extensions.Options;

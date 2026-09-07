@@ -4,6 +4,22 @@ All notable changes to `Keycloak.Net.Sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.0] - 2026-09-07
+
+### Changed
+- **Breaking:** renamed the `Athentications` namespace/folder (a long-standing typo) to `Authentications`. `Keycloak.Net.Sdk.Athentications.*` types (`ITokenProvider`, `ITokenManagement`, `TokenProvider`, `TokenManagement`, `KeycloakAuthHandler`, `SigninResponseDto`, ...) now live under `Keycloak.Net.Sdk.Authentications.*`. Update any `using` statements referencing the old namespace.
+
+### Added
+- `GetClientAsync` and `UpdateClientAsync` on `IClientManagement` for fetching and updating a single client by id
+- `UpdateGroupAsync` on `IGroupManagement` for renaming/updating a single group
+
+### Documentation
+- Fixed several docs examples that didn't match the actual SDK surface and wouldn't have compiled: `docs/user-management.md` (`SignupAsync`/`SigninAsync`/`SetUserPasswordAsync` signatures, a non-existent `SigninRequestDto`) and `docs/role-management.md` (`GetClientRoles` naming, missing `roleName` argument on the assign/remove calls). Also documented previously-undocumented methods (`GetGroupAsync`, `UpdateUserAsync`, `GetUsersAsync`, attributes, `GetRealmRoleAsync`, `GetUserRealmRolesAsync`, `GetGroupRealmRolesAsync`).
+
+### Fixed
+- `EnableServiceAccountAsync`, `EnableUserAsync`/`DisableUserAsync`, and `SetUserAttributeAsync` used to `PUT` a partial payload (e.g. just `{ "enabled": true }`) straight to Keycloak's client/user representation endpoint. Since that endpoint replaces the whole record, this could silently wipe out everything else on the client or user (redirect URIs, secret, protocol mappers, other attributes, ...). These methods now fetch the current representation first and merge the change into it before sending it back.
+- `UpdateClientAsync` and `UpdateGroupAsync` follow the same fetch-then-merge pattern from the start, so introducing them doesn't reopen the same bug.
+
 ## [1.8.0] - 2026-08-21
 
 ### Added

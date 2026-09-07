@@ -1,4 +1,4 @@
-﻿using Keycloak.Net.Sdk.Athentications.Contracts;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Groups.Contracts;

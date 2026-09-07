@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using Keycloak.Net.Sdk.Athentications.Contracts;
+using System.Text.Json.Nodes;
+using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
@@ -131,11 +132,20 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
     private async Task<KeycloakBaseResponse> UpdateUserEnabledStatus(string userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
-        var payload = new { enabled };
+
+        // Keycloak's user PUT replaces the whole representation, so we fetch it first and
+        // only flip the one field we care about - otherwise every other user field
+        // (email, attributes, required actions, ...) would be wiped out.
+        var getResponse = await _httpClient.GetAsync(uri, cancellationToken);
+        if (!getResponse.IsSuccessStatusCode)
+            return new KeycloakFailureResponse(getResponse.StatusCode, getResponse.ReasonPhrase);
+
+        var existingUser = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
+        existingUser["enabled"] = enabled;
 
         var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+            Content = new StringContent(existingUser.ToJsonString(), Encoding.UTF8, "application/json")
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -167,19 +177,22 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default)
     {
-        var existing = await GetUserAsync(userId, cancellationToken);
-        if (!existing.IsSuccessful)
-            return new KeycloakFailureResponse(existing.StatusCode, existing.ErrorMessage);
-
-        var attributes = existing.Response.Attributes ?? new Dictionary<string, List<string>>();
-        attributes[key] = [value];
-
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
-        var payload = new { attributes };
+
+        // Keycloak's user PUT replaces the whole representation, so we fetch it first and
+        // merge the new attribute in - otherwise every other user field would be wiped out.
+        var getResponse = await _httpClient.GetAsync(uri, cancellationToken);
+        if (!getResponse.IsSuccessStatusCode)
+            return new KeycloakFailureResponse(getResponse.StatusCode, getResponse.ReasonPhrase);
+
+        var existingUser = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
+        var attributes = existingUser["attributes"]?.AsObject() ?? new JsonObject();
+        attributes[key] = new JsonArray(value);
+        existingUser["attributes"] = attributes;
 
         var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+            Content = new StringContent(existingUser.ToJsonString(), Encoding.UTF8, "application/json")
         };
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -195,7 +208,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    // ── Credentials ───────────────────────────────────────────────────────────
+    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default)
     {
