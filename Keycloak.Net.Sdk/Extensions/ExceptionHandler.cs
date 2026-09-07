@@ -13,6 +13,12 @@ internal static class ExceptionHandler
 
         var responseContent = await response.Content.ReadAsStringAsync();
 
+        // A successful response can still have an empty body (e.g. 204 No Content, or a
+        // 200 with nothing written to it) - deserializing that would otherwise throw a
+        // JsonException instead of the failure being reported through the response type.
+        if (string.IsNullOrWhiteSpace(responseContent))
+            return new KeycloakBaseResponse<T>(new T(), true, response.StatusCode);
+
         var deserializedResponse = JsonSerializer.Deserialize<T>(responseContent)!;
 
         return new KeycloakBaseResponse<T>(deserializedResponse, true, response.StatusCode);
