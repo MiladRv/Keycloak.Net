@@ -185,6 +185,20 @@ public class ClientManagementTests
         Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
     }
 
+    [Fact]
+    public async Task GetClientAsync_SuccessWithEmptyBody_ReturnsDefaultWithoutThrowing()
+    {
+        // A success status with no body (e.g. a misbehaving proxy, or a 200 with nothing
+        // written to it) used to throw a JsonException instead of a clean response.
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK);
+
+        var result = await sut.GetClientAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotNull(result.Response);
+    }
+
     // ── UpdateClientAsync ─────────────────────────────────────────────────────
 
     [Fact]

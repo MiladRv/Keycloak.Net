@@ -4,6 +4,11 @@ All notable changes to `Keycloak.Net.Sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- A successful response with an empty body (e.g. a `204 No Content`, or a `200` with nothing written to it) used to throw an unhandled `JsonException` when the SDK tried to deserialize it. It now returns a default, empty value for that response type instead.
+
 ## [1.9.0] - 2026-09-07
 
 ### Changed
