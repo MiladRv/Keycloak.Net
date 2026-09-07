@@ -8,15 +8,18 @@ public class MyService(IRoleManagement roles)
 
 ## Client Roles
 
+`GetClientRoles` and the assign/remove methods below operate on the SDK's
+configured client (`ClientUuid` in configuration).
+
 ```csharp
-// Get all client roles
-var clientRoles = await roles.GetClientRolesAsync();
+// Get all roles on the configured client
+var clientRoles = await roles.GetClientRoles();
 
 // Assign a client role to a user
-await roles.AssignClientRoleToUser(userId, roleId);
+await roles.AssignClientRoleToUser(userId, roleId, roleName);
 
 // Remove a client role from a user
-await roles.RemoveClientRoleFromUser(userId, roleId);
+await roles.RemoveClientRoleFromUserAsync(userId, roleId, roleName);
 ```
 
 ### Composite Client Roles
@@ -47,6 +50,9 @@ await roles.RemoveClientRoleCompositesAsync(roleName,
 // Get all realm roles
 var realmRoles = await roles.GetRealmRolesAsync();
 
+// Get a single realm role by name
+var realmRole = await roles.GetRealmRoleAsync(roleName);
+
 // Create a realm role
 await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
 {
@@ -56,12 +62,26 @@ await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
 
 // Delete a realm role
 await roles.DeleteRealmRoleAsync(roleName);
+```
+
+### Realm Roles ↔ Users
+
+```csharp
+// Get the realm roles assigned to a user
+var userRoles = await roles.GetUserRealmRolesAsync(userId);
 
 // Assign a realm role to a user
 await roles.AssignRealmRoleToUserAsync(userId, roleId, roleName);
 
 // Remove a realm role from a user
 await roles.RemoveRealmRoleFromUserAsync(userId, roleId, roleName);
+```
+
+### Realm Roles ↔ Groups
+
+```csharp
+// Get the realm roles assigned to a group
+var groupRoles = await roles.GetGroupRealmRolesAsync(groupId);
 
 // Assign a realm role to a group
 await roles.AssignRealmRoleToGroupAsync(groupId, roleId, roleName);
