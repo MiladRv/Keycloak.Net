@@ -33,7 +33,7 @@ public class ClientManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
 
-        var result = await sut.GetClientScopes();
+        var result = await sut.GetClientScopesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Single(result.Response);

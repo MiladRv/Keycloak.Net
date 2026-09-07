@@ -276,7 +276,7 @@ public class RoleManagementIntegrationTests(KeycloakFixture fixture)
     [Fact]
     public async Task GetClientRoles_ReturnsCreatedTestRole()
     {
-        var result = await Role.GetClientRoles();
+        var result = await Role.GetClientRolesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Contains(result.Response, r => r.Name == KeycloakFixture.TestRoleName);
@@ -286,7 +286,7 @@ public class RoleManagementIntegrationTests(KeycloakFixture fixture)
     public async Task AssignAndRemoveClientRoleToUser_WorksRoundTrip()
     {
         // Assign
-        var assign = await Role.AssignClientRoleToUser(
+        var assign = await Role.AssignClientRoleToUserAsync(
             fixture.TestUserId, fixture.TestRoleId, KeycloakFixture.TestRoleName);
         Assert.True(assign.IsSuccessful);
 
@@ -314,7 +314,7 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
     [Fact]
     public async Task GetClientScopes_ReturnsScopes()
     {
-        var result = await Client.GetClientScopes();
+        var result = await Client.GetClientScopesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.NotEmpty(result.Response);
@@ -359,7 +359,7 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
         Assert.True(created.IsSuccessful);
 
         // Find the created scope's id
-        var scopes = await Client.GetClientScopes();
+        var scopes = await Client.GetClientScopesAsync();
         var found  = scopes.Response.FirstOrDefault(s => s.Name == scopeName);
         Assert.NotNull(found);
 

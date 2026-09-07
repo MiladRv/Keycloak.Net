@@ -13,7 +13,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
-    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoles(CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRolesAsync(CancellationToken cancellationToken = default)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
@@ -23,7 +23,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<ClientRoleResponseDto>>();
     }
 
-    public async Task<KeycloakBaseResponse> AssignClientRoleToUser(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> AssignClientRoleToUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
         var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}";
 
