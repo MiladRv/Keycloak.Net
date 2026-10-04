@@ -61,7 +61,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users?username={username}";
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users?username={Uri.EscapeDataString(username)}";
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);

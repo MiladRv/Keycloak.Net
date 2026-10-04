@@ -10,6 +10,24 @@ namespace Keycloak.Net.Sdk.UnitTests;
 
 public class UserManagementTests
 {
+    [Theory]
+    [InlineData("alice&enabled=false", "alice%26enabled%3Dfalse")]
+    [InlineData("alice#team", "alice%23team")]
+    [InlineData("alice+smith@example.com", "alice%2Bsmith%40example.com")]
+    [InlineData("alice smith", "alice%20smith")]
+    public async Task GetUserByUsernameAsync_SpecialCharacters_AreSentAsOneQueryValue(string username, string encodedUsername)
+    {
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK, TestData.UserListResponse);
+
+        var result = await sut.GetUserByUsernameAsync(username);
+
+        Assert.True(result.IsSuccessful);
+        var requestUri = handler.SentRequests.Single().RequestUri!;
+        Assert.Equal($"?username={encodedUsername}", requestUri.Query);
+        Assert.Equal(string.Empty, requestUri.Fragment);
+    }
+
     private readonly IOptions<KeycloakConfiguration> _options = Options.Create(new KeycloakConfiguration
     {
         ServerUrl    = "http://localhost:8080/",
