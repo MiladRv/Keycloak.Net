@@ -10,6 +10,49 @@ namespace Keycloak.Net.Sdk.UnitTests;
 
 public class RoleManagementTests
 {
+    [Theory]
+    [InlineData("client-roles")]
+    [InlineData("assign-client-role")]
+    [InlineData("client-composites")]
+    [InlineData("add-client-composites")]
+    [InlineData("realm-roles")]
+    [InlineData("realm-role")]
+    [InlineData("create-realm-role")]
+    [InlineData("delete-realm-role")]
+    [InlineData("user-realm-roles")]
+    [InlineData("assign-user-realm-role")]
+    [InlineData("remove-user-realm-role")]
+    [InlineData("group-realm-roles")]
+    [InlineData("assign-group-realm-role")]
+    [InlineData("remove-group-realm-role")]
+    public async Task RoleOperations_ServerHasBasePath_PreserveBasePath(string operation)
+    {
+        var (factory, handler) = HttpClientFactoryHelper.Create("https://example.com/auth/");
+        handler.AddResponse(HttpStatusCode.OK,
+            operation == "realm-role" ? TestData.RealmRoleResponse : "[]");
+        var sut = new RoleManagement(factory, _options);
+
+        switch (operation)
+        {
+            case "client-roles": await sut.GetClientRolesAsync(); break;
+            case "assign-client-role": await sut.AssignClientRoleToUserAsync(TestData.UserId, TestData.RoleId, TestData.RoleName); break;
+            case "client-composites": await sut.GetClientRoleCompositesAsync(TestData.RoleName); break;
+            case "add-client-composites": await sut.AddClientRoleCompositesAsync(TestData.RoleName, []); break;
+            case "realm-roles": await sut.GetRealmRolesAsync(); break;
+            case "realm-role": await sut.GetRealmRoleAsync(TestData.RealmRoleName); break;
+            case "create-realm-role": await sut.CreateRealmRoleAsync(new CreateRealmRoleRequestDto { Name = TestData.RealmRoleName }); break;
+            case "delete-realm-role": await sut.DeleteRealmRoleAsync(TestData.RealmRoleName); break;
+            case "user-realm-roles": await sut.GetUserRealmRolesAsync(TestData.UserId); break;
+            case "assign-user-realm-role": await sut.AssignRealmRoleToUserAsync(TestData.UserId, TestData.RealmRoleId, TestData.RealmRoleName); break;
+            case "remove-user-realm-role": await sut.RemoveRealmRoleFromUserAsync(TestData.UserId, TestData.RealmRoleId, TestData.RealmRoleName); break;
+            case "group-realm-roles": await sut.GetGroupRealmRolesAsync(TestData.GroupId); break;
+            case "assign-group-realm-role": await sut.AssignRealmRoleToGroupAsync(TestData.GroupId, TestData.RealmRoleId, TestData.RealmRoleName); break;
+            case "remove-group-realm-role": await sut.RemoveRealmRoleFromGroupAsync(TestData.GroupId, TestData.RealmRoleId, TestData.RealmRoleName); break;
+        }
+
+        Assert.StartsWith($"/auth/admin/realms/{TestData.RealmName}/", handler.SentRequests.Single().RequestUri!.AbsolutePath);
+    }
+
     private readonly IOptions<KeycloakConfiguration> _options = Options.Create(new KeycloakConfiguration
     {
         ServerUrl    = "http://localhost:8080/",
@@ -33,7 +76,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.OK, TestData.ClientRolesResponse);
 
-        var result = await sut.GetClientRoles();
+        var result = await sut.GetClientRolesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Single(result.Response);
@@ -49,7 +92,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.Unauthorized);
 
-        var result = await sut.GetClientRoles();
+        var result = await sut.GetClientRolesAsync();
 
         Assert.False(result.IsSuccessful);
         Assert.Equal(HttpStatusCode.Unauthorized, result.StatusCode);
@@ -63,7 +106,7 @@ public class RoleManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.NoContent);
 
-        var result = await sut.AssignClientRoleToUser(TestData.UserId, TestData.RoleId, TestData.RoleName);
+        var result = await sut.AssignClientRoleToUserAsync(TestData.UserId, TestData.RoleId, TestData.RoleName);
 
         Assert.True(result.IsSuccessful);
         Assert.Contains($"users/{TestData.UserId}/role-mappings/clients/{TestData.ClientUuid}",

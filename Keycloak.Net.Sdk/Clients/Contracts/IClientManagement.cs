@@ -4,7 +4,7 @@ namespace Keycloak.Net.Sdk.Clients.Contracts;
 
 public interface IClientManagement
 {
-    Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopes(CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<List<ClientScopeResponseDto>>> GetClientScopesAsync(CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<ClientScopeResponseDto>> GetClientScopeAsync(string scopeId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> CreateClientScopeAsync(CreateClientScopeRequestDto requestDto, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> UpdateClientScopeAsync(string scopeId, UpdateClientScopeRequestDto requestDto, CancellationToken cancellationToken = default);

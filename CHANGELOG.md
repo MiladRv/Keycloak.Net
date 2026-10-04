@@ -4,6 +4,29 @@ All notable changes to `Keycloak.Net.Sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+## [2.0.0] - 2026-10-04
+
+### Changed
+- **Breaking:** renamed `IClientManagement.GetClientScopes`, `IRoleManagement.GetClientRoles`, and `IRoleManagement.AssignClientRoleToUser` to `GetClientScopesAsync`, `GetClientRolesAsync`, and `AssignClientRoleToUserAsync` respectively, for consistency with every other async method in the SDK.
+- `IRealmManagement` operations used to fetch a fresh admin access token (via the admin username/password) on every single call. Added `IRealmAdminTokenProvider`, registered as a singleton, which caches that token in memory for its lifetime and shares it across all realm operations - mirroring the existing `ITokenProvider` pattern used for the SDK's regular client. `RealmManagement`'s constructor no longer takes `IOptions<KeycloakConfiguration>` directly; if you constructed it manually instead of through `AddKeycloak`, pass an `IRealmAdminTokenProvider` instead.
+
+### Fixed
+- Service-account token failures now throw `KeycloakException` with the HTTP status and error body instead of `NullReferenceException`. A successful response without an access token is also rejected.
+- Client scope and role requests preserve the path in `ServerUrl`, so installations hosted under a path such as `/auth/` work consistently.
+- `GetUserByUsernameAsync` escapes the username before adding it to the query string, including `&`, `#`, `+`, and spaces.
+- The README signup example now uses the actual `SignupRequestDto` constructor and property names.
+- SDK releases no longer depend on the tag push event's `base_ref`. The workflow verifies that the tag belongs to `main` and matches the package version before testing and publishing to NuGet.
+- A successful response with an empty body (e.g. a `204 No Content`, or a `200` with nothing written to it) used to throw an unhandled `JsonException` when the SDK tried to deserialize it. It now returns a default, empty value for that response type instead.
+- `RevokeTokenAsync` duplicated the shared response-handling logic by hand instead of reusing `HandleResponseAsync`, and used the raw response body as the error message on failure while every other method used the HTTP reason phrase. Both `HandleResponseAsync` overloads now prefer the response body for the error message (falling back to the reason phrase when the body is empty), and `RevokeTokenAsync` goes through the shared helper like everything else.
+- Fixed mangled comment separators (`──`, `↔`) in a few files left over from the `Athentications` → `Authentications` rename in 1.9.0 - a text-encoding mistake on my part, comments only, no functional impact.
+
+### Tests
+- Added regression coverage for failed token requests, missing access tokens, server base paths, and usernames containing special characters.
+- Added Keycloak integration tests to the SDK release workflow. The updated README signup example was also compiled against the SDK.
+- Added test coverage for `KeycloakManagement` (the `IKeycloakManagement` facade) and `ServiceRegistrations` (`AddKeycloak` DI wiring), previously untested: missing `ServerUrl` validation, that every manager interface resolves, that `IKeycloakManagement`'s properties come from the same container as the individually-resolved managers, configuration binding, the `configure` callback override, and the three named `HttpClient`s Keycloak calls go through.
+
 ## [1.9.0] - 2026-09-07
 
 ### Changed

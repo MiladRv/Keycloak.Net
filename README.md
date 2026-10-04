@@ -11,6 +11,12 @@ A modular .NET SDK for the **Keycloak Admin REST API**: typed interfaces, built-
 
 ---
 
+## Upgrading to 2.0
+
+Version 2.0 includes API changes. See the [migration guide](docs/migration-2.0.md) before upgrading from 1.x.
+
+---
+
 ## Why this SDK?
 
 Working with the Keycloak Admin API from .NET means writing boilerplate: managing service-account tokens, attaching `Authorization` headers, handling retries, and wiring everything into the DI container. This SDK takes care of all of that so you can call `IUserManagement`, `IRoleManagement`, etc. directly from your services - no plumbing required.
@@ -59,13 +65,11 @@ public class MyService(IUserManagement users, IRoleManagement roles)
 {
     public async Task CreateUser()
     {
-        var result = await users.SignupAsync(new SignupRequestDto
+        var result = await users.SignupAsync(new SignupRequestDto("john.doe", "Secret@123")
         {
-            Username  = "john.doe",
             Email     = "john@example.com",
-            FirstName = "John",
-            LastName  = "Doe",
-            Password  = "Secret@123"
+            Firstname = "John",
+            Lastname  = "Doe"
         });
     }
 }

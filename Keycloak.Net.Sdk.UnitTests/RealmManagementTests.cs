@@ -25,7 +25,8 @@ public class RealmManagementTests
     private (RealmManagement Sut, FakeHttpMessageHandler Handler) CreateSut()
     {
         var (factory, handler) = HttpClientFactoryHelper.Create();
-        return (new RealmManagement(factory, _options), handler);
+        var adminTokenProvider = new RealmAdminTokenProvider(factory, _options);
+        return (new RealmManagement(factory, adminTokenProvider), handler);
     }
 
     [Fact]
@@ -176,5 +177,30 @@ public class RealmManagementTests
         handler.AddResponse(HttpStatusCode.Unauthorized);
 
         await Assert.ThrowsAsync<KeycloakException>(() => sut.DeleteRealmAsync(TestData.RealmName));
+    }
+
+    // ── Admin token caching ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task MultipleOperations_ShareOneAdminTokenProvider_OnlyFetchTokenOnce()
+    {
+        var (factory, handler) = HttpClientFactoryHelper.Create();
+        var adminTokenProvider = new RealmAdminTokenProvider(factory, _options);
+        var sut = new RealmManagement(factory, adminTokenProvider);
+
+        // One token response, then one response per realm operation below
+        handler.AddResponse(HttpStatusCode.OK, TestData.SigninResponse);
+        handler.AddResponse(HttpStatusCode.OK, TestData.RealmsResponse);
+        handler.AddResponse(HttpStatusCode.OK, TestData.RealmResponse);
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        await sut.GetRealmsAsync();
+        await sut.GetRealmAsync(TestData.RealmName);
+        await sut.DeleteRealmAsync(TestData.RealmName);
+
+        Assert.Equal(4, handler.SentRequests.Count);
+        Assert.Contains("openid-connect/token", handler.SentRequests[0].RequestUri!.ToString());
+        // None of the remaining requests re-fetch the admin token
+        Assert.DoesNotContain(handler.SentRequests.Skip(1), r => r.RequestUri!.ToString().Contains("openid-connect/token"));
     }
 }

@@ -10,6 +10,19 @@ namespace Keycloak.Net.Sdk.UnitTests;
 
 public class ClientManagementTests
 {
+    [Fact]
+    public async Task GetClientScopesAsync_ServerHasBasePath_PreservesBasePath()
+    {
+        var (factory, handler) = HttpClientFactoryHelper.Create("https://example.com/auth/");
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
+        var sut = new ClientManagement(factory, _options);
+
+        await sut.GetClientScopesAsync();
+
+        Assert.Equal($"/auth/admin/realms/{TestData.RealmName}/client-scopes",
+            handler.SentRequests[0].RequestUri!.AbsolutePath);
+    }
+
     private readonly IOptions<KeycloakConfiguration> _options = Options.Create(new KeycloakConfiguration
     {
         ServerUrl    = "http://localhost:8080/",
@@ -33,7 +46,7 @@ public class ClientManagementTests
         var (sut, handler) = CreateSut();
         handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
 
-        var result = await sut.GetClientScopes();
+        var result = await sut.GetClientScopesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Single(result.Response);
@@ -183,6 +196,20 @@ public class ClientManagementTests
 
         Assert.False(result.IsSuccessful);
         Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetClientAsync_SuccessWithEmptyBody_ReturnsDefaultWithoutThrowing()
+    {
+        // A success status with no body (e.g. a misbehaving proxy, or a 200 with nothing
+        // written to it) used to throw a JsonException instead of a clean response.
+        var (sut, handler) = CreateSut();
+        handler.AddResponse(HttpStatusCode.OK);
+
+        var result = await sut.GetClientAsync(TestData.ClientUuid);
+
+        Assert.True(result.IsSuccessful);
+        Assert.NotNull(result.Response);
     }
 
     // ── UpdateClientAsync ─────────────────────────────────────────────────────

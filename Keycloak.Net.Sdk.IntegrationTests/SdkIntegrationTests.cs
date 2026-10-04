@@ -276,7 +276,7 @@ public class RoleManagementIntegrationTests(KeycloakFixture fixture)
     [Fact]
     public async Task GetClientRoles_ReturnsCreatedTestRole()
     {
-        var result = await Role.GetClientRoles();
+        var result = await Role.GetClientRolesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.Contains(result.Response, r => r.Name == KeycloakFixture.TestRoleName);
@@ -286,7 +286,7 @@ public class RoleManagementIntegrationTests(KeycloakFixture fixture)
     public async Task AssignAndRemoveClientRoleToUser_WorksRoundTrip()
     {
         // Assign
-        var assign = await Role.AssignClientRoleToUser(
+        var assign = await Role.AssignClientRoleToUserAsync(
             fixture.TestUserId, fixture.TestRoleId, KeycloakFixture.TestRoleName);
         Assert.True(assign.IsSuccessful);
 
@@ -314,7 +314,7 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
     [Fact]
     public async Task GetClientScopes_ReturnsScopes()
     {
-        var result = await Client.GetClientScopes();
+        var result = await Client.GetClientScopesAsync();
 
         Assert.True(result.IsSuccessful);
         Assert.NotEmpty(result.Response);
@@ -359,7 +359,7 @@ public class ClientManagementIntegrationTests(KeycloakFixture fixture)
         Assert.True(created.IsSuccessful);
 
         // Find the created scope's id
-        var scopes = await Client.GetClientScopes();
+        var scopes = await Client.GetClientScopesAsync();
         var found  = scopes.Response.FirstOrDefault(s => s.Name == scopeName);
         Assert.NotNull(found);
 
@@ -540,7 +540,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
     private IRoleManagement  Role  => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IRoleManagement>();
     private IGroupManagement Group => fixture.Services.CreateScope().ServiceProvider.GetRequiredService<IGroupManagement>();
 
-    // â”€â”€ Read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Read ─────────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetRealmRolesAsync_ReturnsCreatedTestRole()
@@ -571,7 +571,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.False(result.IsSuccessful);
     }
 
-    // â”€â”€ Create / Delete round-trip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Create / Delete round-trip ───────────────────────────────────────────
 
     [Fact]
     public async Task CreateAndDeleteRealmRoleAsync_WorksRoundTrip()
@@ -600,7 +600,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.False(afterDelete.IsSuccessful);
     }
 
-    // â”€â”€ Realm Role â†” User â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Realm Role ↔ User ─────────────────────────────────────────────────────
 
     [Fact]
     public async Task AssignAndRemoveRealmRoleToUser_WorksRoundTrip()
@@ -638,7 +638,7 @@ public class RealmRoleManagementIntegrationTests(KeycloakFixture fixture)
         Assert.DoesNotContain(result.Response, r => r.Id == fixture.TestRealmRoleId);
     }
 
-    // â”€â”€ Realm Role â†” Group â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Realm Role ↔ Group ────────────────────────────────────────────────────
 
     [Fact]
     public async Task AssignAndRemoveRealmRoleToGroup_WorksRoundTrip()

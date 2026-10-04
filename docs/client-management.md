@@ -56,7 +56,7 @@ scope mappings, which can then be shared across multiple clients.
 
 ```csharp
 // List all client scopes in the realm
-var scopes = await clients.GetClientScopes();
+var scopes = await clients.GetClientScopesAsync();
 
 // Get a single scope by id
 var scope = await clients.GetClientScopeAsync(scopeId);

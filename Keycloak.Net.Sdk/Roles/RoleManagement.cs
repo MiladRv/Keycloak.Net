@@ -13,9 +13,9 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 {
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("keycloak");
 
-    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoles(CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRolesAsync(CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -23,9 +23,9 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<ClientRoleResponseDto>>();
     }
 
-    public async Task<KeycloakBaseResponse> AssignClientRoleToUser(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
+    public async Task<KeycloakBaseResponse> AssignClientRoleToUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/clients/{keyCloakConfiguration.Value.ClientUuid}";
 
         var roles = new[]
         {
@@ -73,7 +73,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetClientRoleCompositesAsync(string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -83,7 +83,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> AddClientRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/clients/{keyCloakConfiguration.Value.ClientUuid}/roles/{roleName}/composites";
 
         var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
         {
@@ -113,7 +113,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetRealmRolesAsync(CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/roles";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -123,7 +123,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<RealmRoleResponseDto>> GetRealmRoleAsync(string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -133,7 +133,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> CreateRealmRoleAsync(CreateRealmRoleRequestDto requestDto, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/roles";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles";
 
         var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
         {
@@ -147,7 +147,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> DeleteRealmRoleAsync(string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
         var request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -159,7 +159,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetUserRealmRolesAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -169,7 +169,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> AssignRealmRoleToUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
 
         var roles = new[] { new { id = roleId, name = roleName } };
 
@@ -185,7 +185,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> RemoveRealmRoleFromUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm";
 
         var roles = new[] { new { id = roleId, name = roleName } };
 
@@ -203,7 +203,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetGroupRealmRolesAsync(string groupId, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -213,7 +213,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> AssignRealmRoleToGroupAsync(string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
 
         var roles = new[] { new { id = roleId, name = roleName } };
 
@@ -229,7 +229,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> RemoveRealmRoleFromGroupAsync(string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"/admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
+        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm";
 
         var roles = new[] { new { id = roleId, name = roleName } };
 

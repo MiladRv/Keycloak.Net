@@ -12,6 +12,10 @@ rather than the SDK's configured client credentials. This is because these
 endpoints manage realms themselves, including realms that may not exist yet or
 that the configured client has no access to.
 
+The resulting admin access token is cached in memory for its lifetime and shared
+across every `IRealmManagement` call, so the admin password isn't resubmitted on
+every request - only when there's no valid cached token yet.
+
 ## Create / Delete Realms
 
 ```csharp

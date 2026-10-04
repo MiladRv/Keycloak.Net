@@ -61,7 +61,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users?username={username}";
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users?username={Uri.EscapeDataString(username)}";
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -208,7 +208,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Credentials ───────────────────────────────────────────────────────────
 
     public async Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default)
     {

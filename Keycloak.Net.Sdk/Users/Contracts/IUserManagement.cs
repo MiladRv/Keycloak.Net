@@ -19,7 +19,7 @@ public interface IUserManagement
     Task<KeycloakBaseResponse> SetUserAttributeAsync(string userId, string key, string value, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    // â”€â”€ Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Credentials ───────────────────────────────────────────────────────────
     Task<KeycloakBaseResponse<List<CredentialResponseDto>>> GetUserCredentialsAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteUserCredentialAsync(string userId, string credentialId, CancellationToken cancellationToken = default);
 }
