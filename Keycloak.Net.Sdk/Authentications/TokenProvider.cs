@@ -1,5 +1,6 @@
 using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
+using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Microsoft.Extensions.Options;
@@ -33,6 +34,18 @@ public sealed class TokenProvider : ITokenProvider
                 return _token!;
 
             var response = await GetAdminTokenAsync();
+
+            if (!response.IsSuccessful)
+                throw new KeycloakException(
+                    _keycloakConfiguration.Value.RealmName,
+                    _keycloakConfiguration.Value.ClientId,
+                    $"Could not get the service-account token (HTTP {(int)response.StatusCode}): {response.ErrorMessage}");
+
+            if (string.IsNullOrWhiteSpace(response.Response?.AccessToken))
+                throw new KeycloakException(
+                    _keycloakConfiguration.Value.RealmName,
+                    _keycloakConfiguration.Value.ClientId,
+                    "The service-account token response did not contain an access token.");
 
             _token = response.Response.AccessToken;
             _expiresAt = DateTime.UtcNow.AddSeconds(response.Response.ExpiresIn - 30);
