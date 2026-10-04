@@ -7,10 +7,12 @@ on:
 
 jobs:
   test:
-    name: Build & Unit Tests
+    name: Build & Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -19,6 +21,13 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          version=$(dotnet msbuild Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj -getProperty:Version)
+          test "$GITHUB_REF_NAME" = "sdk/v$version"
 
       - name: Restore
         run: dotnet restore
@@ -29,10 +38,12 @@ jobs:
       - name: Unit Tests
         run: dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj --configuration Release --no-build --verbosity normal
 
+      - name: Integration Tests
+        run: dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj --configuration Release --no-build --framework net10.0 --verbosity normal
+
   publish:
     name: Pack & Publish to NuGet
     needs: test
-    if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,3 +67,10 @@ jobs:
 
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: keycloak-sdk-package
+          path: ./nupkgs/*.nupkg
+          if-no-files-found: error
