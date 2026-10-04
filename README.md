@@ -59,13 +59,11 @@ public class MyService(IUserManagement users, IRoleManagement roles)
 {
     public async Task CreateUser()
     {
-        var result = await users.SignupAsync(new SignupRequestDto
+        var result = await users.SignupAsync(new SignupRequestDto("john.doe", "Secret@123")
         {
-            Username  = "john.doe",
             Email     = "john@example.com",
-            FirstName = "John",
-            LastName  = "Doe",
-            Password  = "Secret@123"
+            Firstname = "John",
+            Lastname  = "Doe"
         });
     }
 }
