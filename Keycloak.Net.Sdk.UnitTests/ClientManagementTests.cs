@@ -10,6 +10,19 @@ namespace Keycloak.Net.Sdk.UnitTests;
 
 public class ClientManagementTests
 {
+    [Fact]
+    public async Task GetClientScopesAsync_ServerHasBasePath_PreservesBasePath()
+    {
+        var (factory, handler) = HttpClientFactoryHelper.Create("https://example.com/auth/");
+        handler.AddResponse(HttpStatusCode.OK, TestData.ClientScopesResponse);
+        var sut = new ClientManagement(factory, _options);
+
+        await sut.GetClientScopesAsync();
+
+        Assert.Equal($"/auth/admin/realms/{TestData.RealmName}/client-scopes",
+            handler.SentRequests[0].RequestUri!.AbsolutePath);
+    }
+
     private readonly IOptions<KeycloakConfiguration> _options = Options.Create(new KeycloakConfiguration
     {
         ServerUrl    = "http://localhost:8080/",
