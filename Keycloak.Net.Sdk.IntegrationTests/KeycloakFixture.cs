@@ -38,12 +38,14 @@ public class KeycloakFixture : IAsyncLifetime
     public string           TestGroupId       { get; private set; } = null!;
     public string           TestRealmRoleId   { get; private set; } = null!;
     public string           SdkClientUuid     { get; private set; } = null!;
+    public string           SecondaryTestUserId { get; private set; } = null!;
     public const string     TestRoleName      = "sdk-test-role";
     public const string     TestRealmRoleName = "sdk-test-realm-role";
     public const string     TestGroupName     = "sdk-test-group";
     public const string     TestUsername      = "sdk-test-user";
     public const string     TestPassword      = "Test@1234";
     public const string     Realm             = "sdk-integration";
+    public const string     SecondaryRealm    = "sdk-secondary";
     public const string     SdkClientId       = "sdk-client";
 
     private const string AdminUsername = "admin";
@@ -105,6 +107,25 @@ public class KeycloakFixture : IAsyncLifetime
 
         var services = new ServiceCollection();
         services.AddKeycloak(BuildConfigurationFrom(config));
+        services.AddKeycloak("primary", BuildConfigurationFrom(config).GetSection("keycloak"));
+
+        await CreateRealmAsync(http, adminToken, SecondaryRealm);
+        var secondaryClient = await CreateClientAsync(http, adminToken, SecondaryRealm, SdkClientId);
+        var secondarySecret = await GetClientSecretAsync(http, adminToken, SecondaryRealm, secondaryClient);
+        await AssignRealmAdminToServiceAccountAsync(http, adminToken, SecondaryRealm, secondaryClient, SdkClientId);
+        SecondaryTestUserId = await CreateTestUserAsync(http, adminToken, SecondaryRealm, TestUsername, TestPassword);
+        services.AddKeycloak("secondary", settings =>
+        {
+            settings.ServerUrl = baseAddress + "/";
+            settings.RealmName = SecondaryRealm;
+            settings.ClientId = SdkClientId;
+            settings.ClientSecret = secondarySecret;
+            settings.ClientUuid = secondaryClient;
+            settings.AdminUsername = AdminUsername;
+            settings.AdminPassword = AdminPassword;
+            settings.NumberOfRetries = 1;
+            settings.DelayBetweenRetryRequestsInSeconds = 1;
+        });
         Services = services.BuildServiceProvider();
     }
 
