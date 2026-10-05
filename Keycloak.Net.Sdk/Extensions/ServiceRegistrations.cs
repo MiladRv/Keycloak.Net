@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Keycloak.Net.Sdk.Configurations;
 
-public static class ServiceRegistrations
+public static partial class ServiceRegistrations
 {
     public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration, Action<KeycloakConfiguration>? configure = null)
     {
