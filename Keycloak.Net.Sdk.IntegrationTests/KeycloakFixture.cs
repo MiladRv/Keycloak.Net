@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Networks;
 using Keycloak.Net.Sdk.Configurations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +26,10 @@ namespace Keycloak.Net.Sdk.IntegrationTests;
 public class KeycloakFixture : IAsyncLifetime
 {
     private KeycloakContainer _container = null!;
+    private INetwork _network = null!;
+    private IContainer _smtp = null!;
+
+    public Uri MailpitUrl => new($"http://{_smtp.Hostname}:{_smtp.GetMappedPublicPort(8025)}/");
 
     // ── Public state consumed by tests ────────────────────────────────────────
     public IServiceProvider Services          { get; private set; } = null!;
@@ -44,7 +51,17 @@ public class KeycloakFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _container = new KeycloakBuilder().Build();
+        _network = new NetworkBuilder().Build();
+        await _network.CreateAsync();
+        _smtp = new ContainerBuilder("axllent/mailpit:v1.31.4")
+            .WithNetwork(_network)
+            .WithNetworkAliases("smtp")
+            .WithPortBinding(8025, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(request => request.ForPort(8025)))
+            .Build();
+        await _smtp.StartAsync();
+
+        _container = new KeycloakBuilder().WithNetwork(_network).Build();
         await _container.StartAsync();
 
         var baseAddress = _container.GetBaseAddress().TrimEnd('/');
@@ -91,7 +108,13 @@ public class KeycloakFixture : IAsyncLifetime
         Services = services.BuildServiceProvider();
     }
 
-    public async Task DisposeAsync() => await _container.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        if (Services is IAsyncDisposable services) await services.DisposeAsync();
+        if (_container is not null) await _container.DisposeAsync();
+        if (_smtp is not null) await _smtp.DisposeAsync();
+        if (_network is not null) await _network.DisposeAsync();
+    }
 
     // ── Admin API helpers ─────────────────────────────────────────────────────
 
@@ -113,7 +136,12 @@ public class KeycloakFixture : IAsyncLifetime
     private static async Task CreateRealmAsync(HttpClient http, string token, string realm)
     {
         var req = AuthorizedPost("admin/realms", token,
-            new { realm, enabled = true });
+            new
+            {
+                realm,
+                enabled = true,
+                smtpServer = new { host = "smtp", port = "1025", from = "sdk@example.test" }
+            });
         (await http.SendAsync(req)).EnsureSuccessStatusCode();
     }
 

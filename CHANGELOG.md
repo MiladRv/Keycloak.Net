@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- User email operations: `SendVerificationEmailAsync`, `SendPasswordResetEmailAsync`, and `ExecuteActionsEmailAsync`, with optional client, redirect URI, and link lifetime settings.
+- Required action constants and support for custom action IDs.
+- Integration tests that capture Keycloak emails in a local Mailpit container and check the action links.
+
 ## [2.0.0] - 2026-10-04
 
 ### Changed

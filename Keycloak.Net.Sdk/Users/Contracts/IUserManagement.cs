@@ -13,6 +13,9 @@ public interface IUserManagement
     Task<KeycloakBaseResponse> EnableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DisableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> SendVerificationEmailAsync(string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> SendPasswordResetEmailAsync(string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> ExecuteActionsEmailAsync(string userId, IReadOnlyCollection<string> actions, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<Dictionary<string, List<string>>>> GetUserAttributesAsync(string userId, CancellationToken cancellationToken = default);
