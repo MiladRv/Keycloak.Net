@@ -192,7 +192,7 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         if (options?.LifespanSeconds is <= 0)
             throw new ArgumentOutOfRangeException(nameof(options), "The email link lifetime must be greater than zero.");
 
-        if (options?.RedirectUri is not null && !Uri.TryCreate(options.RedirectUri, UriKind.Absolute, out _))
+        if (options?.RedirectUri is not null && !Uri.IsWellFormedUriString(options.RedirectUri, UriKind.Absolute))
             throw new ArgumentException("The redirect URI must be absolute.", nameof(options));
 
         var parameters = new List<string>();
