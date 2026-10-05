@@ -113,15 +113,34 @@ public class UserActionEmailTests
         Assert.Empty(handler.SentRequests);
     }
 
-    [Fact]
-    public async Task EmailRequest_InvalidRedirect_DoesNotSendRequest()
+    [Theory]
+    [InlineData("/done")]
+    [InlineData("done")]
+    [InlineData("//app.example.com/done")]
+    [InlineData("C:\\done")]
+    [InlineData("")]
+    public async Task EmailRequest_InvalidRedirect_DoesNotSendRequest(string redirectUri)
     {
         var (users, handler) = Create();
 
         await Assert.ThrowsAsync<ArgumentException>(() => users.SendVerificationEmailAsync(
-            TestData.UserId, new UserActionEmailOptions { RedirectUri = "/done" }));
+            TestData.UserId, new UserActionEmailOptions { RedirectUri = redirectUri }));
 
         Assert.Empty(handler.SentRequests);
+    }
+
+    [Fact]
+    public async Task EmailRequest_CustomSchemeRedirect_IsSupported()
+    {
+        var (users, handler) = Create();
+        handler.AddResponse(HttpStatusCode.NoContent);
+
+        var result = await users.SendVerificationEmailAsync(TestData.UserId,
+            new UserActionEmailOptions { ClientId = "mobile", RedirectUri = "myapp://account/done" });
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal("?client_id=mobile&redirect_uri=myapp%3A%2F%2Faccount%2Fdone",
+            handler.SentRequests.Single().RequestUri!.Query);
     }
 
     [Fact]
