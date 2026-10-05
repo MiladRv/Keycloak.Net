@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - User email operations: `SendVerificationEmailAsync`, `SendPasswordResetEmailAsync`, and `ExecuteActionsEmailAsync`, with optional client, redirect URI, and link lifetime settings.
 - Required action constants and support for custom action IDs.
 - Integration tests that capture Keycloak emails in a local Mailpit container and check the action links.
+- A develop test workflow that builds all targets and runs unit and integration tests without publishing packages.
+
+### Changed
+- Custom implementations of `IUserManagement` must implement the new email and user streaming methods. Applications using the SDK's registered `UserManagement` do not need DI changes.
 
 ## [2.0.0] - 2026-10-04
 
