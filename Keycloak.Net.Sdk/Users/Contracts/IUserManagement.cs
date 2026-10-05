@@ -10,6 +10,8 @@ public interface IUserManagement
     Task<KeycloakBaseResponse<UserInfoResponseDto>> GetUserAsync(string id, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default);
+    /// <summary>Streams users across pages. Query.Max limits the total number returned.</summary>
+    IAsyncEnumerable<UserInfoResponseDto> GetAllUsersAsync(GetUsersQueryDto? query = null, int pageSize = 100, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> EnableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DisableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default);

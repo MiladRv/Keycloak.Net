@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `GetAllUsersAsync` streams users across pages with filters, a starting offset, a total result limit, and cancellation support. Failed pages throw `KeycloakException` instead of silently ending enumeration.
 - Named Keycloak connections using keyed services, with separate configuration, HTTP clients, and token caches for each realm.
 - Tests for named connection isolation and two realms sharing the same server and client ID.
 - User email operations: `SendVerificationEmailAsync`, `SendPasswordResetEmailAsync`, and `ExecuteActionsEmailAsync`, with optional client, redirect URI, and link lifetime settings.

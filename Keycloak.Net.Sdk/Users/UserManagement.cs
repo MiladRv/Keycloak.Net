@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Runtime.CompilerServices;
 using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
+using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Keycloak.Net.Sdk.Users.Contracts;
@@ -95,6 +97,45 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         if (query.Enabled.HasValue)   parameters.Add($"enabled={query.Enabled.Value.ToString().ToLowerInvariant()}");
 
         return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+    }
+
+    public async IAsyncEnumerable<UserInfoResponseDto> GetAllUsersAsync(
+        GetUsersQueryDto? query = null, int pageSize = 100,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (pageSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "The page size must be greater than zero.");
+        var filter = query ?? new GetUsersQueryDto();
+        if (filter.First is < 0 || filter.Max is < 0)
+            throw new ArgumentOutOfRangeException(nameof(query), "The starting offset and total limit must not be negative.");
+
+        var offset = filter.First ?? 0;
+        var remaining = filter.Max ?? int.MaxValue;
+        while (remaining > 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var page = await GetUsersAsync(filter with { First = offset, Max = Math.Min(pageSize, remaining) }, cancellationToken);
+            if (!page.IsSuccessful)
+                throw new KeycloakException(keyCloakConfiguration.Value.RealmName, keyCloakConfiguration.Value.ClientId,
+                    $"Could not enumerate users (HTTP {(int)page.StatusCode}): {page.ErrorMessage}");
+            if (page.Response is null)
+                throw new KeycloakException(keyCloakConfiguration.Value.RealmName, keyCloakConfiguration.Value.ClientId,
+                    "The user list response did not contain a list.");
+            if (page.Response.Count == 0)
+                yield break;
+
+            var returned = 0;
+            foreach (var user in page.Response)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return user;
+                returned++;
+                remaining--;
+                if (remaining == 0) yield break;
+            }
+
+            offset = checked(offset + returned);
+        }
     }
 
     public async Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
