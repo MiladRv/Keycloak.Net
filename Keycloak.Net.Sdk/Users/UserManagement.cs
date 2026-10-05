@@ -123,6 +123,55 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync();
     }
 
+    public Task<KeycloakBaseResponse> SendVerificationEmailAsync(
+        string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default)
+        => SendActionEmailAsync(userId, "send-verify-email", null, options, cancellationToken);
+
+    public Task<KeycloakBaseResponse> SendPasswordResetEmailAsync(
+        string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default)
+        => ExecuteActionsEmailAsync(userId, [UserRequiredActions.UpdatePassword], options, cancellationToken);
+
+    public Task<KeycloakBaseResponse> ExecuteActionsEmailAsync(
+        string userId, IReadOnlyCollection<string> actions, UserActionEmailOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(actions);
+        if (actions.Count == 0 || actions.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("Provide at least one non-empty required action ID.", nameof(actions));
+
+        return SendActionEmailAsync(userId, "execute-actions-email", actions, options, cancellationToken);
+    }
+
+    private async Task<KeycloakBaseResponse> SendActionEmailAsync(
+        string userId, string endpoint, IReadOnlyCollection<string>? actions,
+        UserActionEmailOptions? options, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (options?.LifespanSeconds is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "The email link lifetime must be greater than zero.");
+
+        if (options?.RedirectUri is not null && !Uri.TryCreate(options.RedirectUri, UriKind.Absolute, out _))
+            throw new ArgumentException("The redirect URI must be absolute.", nameof(options));
+
+        var parameters = new List<string>();
+        if (options?.ClientId is not null)
+            parameters.Add($"client_id={Uri.EscapeDataString(options.ClientId)}");
+        if (options?.RedirectUri is not null)
+            parameters.Add($"redirect_uri={Uri.EscapeDataString(options.RedirectUri)}");
+        if (options?.LifespanSeconds is not null)
+            parameters.Add($"lifespan={options.LifespanSeconds.Value}");
+
+        var query = parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{Uri.EscapeDataString(userId)}/{endpoint}{query}";
+        var request = new HttpRequestMessage(HttpMethod.Put, uri);
+        if (actions is not null)
+            request.Content = new StringContent(JsonSerializer.Serialize(actions), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
     public async Task<KeycloakBaseResponse> EnableUserAsync(string userId, CancellationToken cancellationToken = default)
         => await UpdateUserEnabledStatus(userId, true, cancellationToken);
 

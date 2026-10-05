@@ -78,6 +78,28 @@ actions, etc.) intact instead of it getting wiped out.
 await users.SetUserPasswordAsync(userId, "NewPass@456", temporary: false);
 ```
 
+## User Emails
+
+Keycloak sends these emails using the realm's SMTP settings. The user must have an email address.
+
+```csharp
+await users.SendVerificationEmailAsync(userId);
+await users.SendPasswordResetEmailAsync(userId);
+
+await users.ExecuteActionsEmailAsync(userId,
+    [UserRequiredActions.UpdateProfile, UserRequiredActions.UpdatePassword],
+    new UserActionEmailOptions
+    {
+        ClientId = "my-app",
+        RedirectUri = "https://app.example.com/account",
+        LifespanSeconds = 900
+    });
+```
+
+The redirect URI must be allowed by the selected client's configuration. Leave options unset to use Keycloak's defaults. Password reset uses `execute-actions-email` with `UPDATE_PASSWORD`, rather than the deprecated password reset email endpoint. Custom required action IDs are supported.
+
+These methods return `KeycloakBaseResponse`, including the status and error body when sending fails. They also accept a `CancellationToken`.
+
 ## Attributes
 
 ```csharp
