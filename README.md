@@ -17,6 +17,14 @@ Version 2.0 includes API changes. See the [migration guide](docs/migration-2.0.m
 
 ---
 
+## Features on develop
+
+These additions are available on `develop` and have not been released on NuGet yet:
+
+- [User emails](docs/user-management.md#user-emails): email verification, password reset, and required action emails.
+- [Multiple realms](docs/multiple-realms.md): named connections with separate configuration and token caches.
+- [User streaming](docs/user-management.md#stream-users): `GetAllUsersAsync` with automatic pagination and cancellation.
+
 ## Why this SDK?
 
 Working with the Keycloak Admin API from .NET means writing boilerplate: managing service-account tokens, attaching `Authorization` headers, handling retries, and wiring everything into the DI container. This SDK takes care of all of that so you can call `IUserManagement`, `IRoleManagement`, etc. directly from your services - no plumbing required.
@@ -148,6 +156,7 @@ Or use `IGroupManagement` to organize users into groups:
 
 - [Getting Started](docs/getting-started.md)
 - [User Management](docs/user-management.md)
+- [Multiple Realms](docs/multiple-realms.md)
 - [Role Management](docs/role-management.md)
 - [Client Management](docs/client-management.md)
 - [Realm Management](docs/realm-management.md)
@@ -171,16 +180,19 @@ dotnet test Keycloak.Net.Sdk.UnitTests/Keycloak.Net.Sdk.UnitTests.csproj
 
 ### Integration Tests
 
+```bash
 # Integration tests - requires Docker (Testcontainers.Keycloak)
 dotnet test Keycloak.Net.Sdk.IntegrationTests/Keycloak.Net.Sdk.IntegrationTests.csproj
 ```
 
 The fixture automatically handles the full setup sequence:
-1. Starts a Keycloak container
-2. Creates a dedicated test realm
-3. Creates a confidential client with service accounts
-4. Grants realm-admin role to the service account
-5. Creates a test user, client role, realm role, and group
+1. Starts Keycloak and Mailpit containers on an isolated Docker network
+2. Creates two dedicated test realms and configures local SMTP delivery
+3. Creates confidential clients with service accounts
+4. Grants realm-admin roles to the service accounts
+5. Creates test users, a client role, a realm role, and a group
+
+Email tests capture messages in Mailpit. No emails are sent to external recipients.
 
 > The first run pulls the Keycloak Docker image (~500 MB). Subsequent runs reuse the cached image.
 

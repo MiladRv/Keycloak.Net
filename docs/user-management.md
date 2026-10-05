@@ -48,6 +48,25 @@ var page = await users.GetUsersAsync(new GetUsersQueryDto
 });
 ```
 
+## Stream Users
+
+`GetAllUsersAsync` fetches pages on demand and yields users one at a time:
+
+```csharp
+await foreach (var user in users.GetAllUsersAsync(
+    new GetUsersQueryDto { Enabled = true }, pageSize: 100,
+    cancellationToken: cancellationToken))
+{
+    await ProcessUserAsync(user, cancellationToken);
+}
+```
+
+Filters are applied to every request. `First` selects the starting offset, and `Max` limits the total number of users returned across all pages. With no `Max`, enumeration continues until Keycloak returns an empty page, including when a server returns fewer users than the requested page size. `Max = 0` returns no users without making a request.
+
+Only the current page is held in memory. Breaking out of the loop prevents further page requests. A failed page throws `KeycloakException` with the HTTP status and Keycloak error; previously yielded users have already been delivered to the caller. Cancellation can be passed to the method or through `WithCancellation`.
+
+Pagination uses offsets, so concurrent changes to the user list can affect which users are returned. It does not provide a snapshot of the realm.
+
 ## Update
 
 ```csharp
