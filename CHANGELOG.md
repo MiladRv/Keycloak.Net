@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Client-role operations can target any client in the realm: every client-role method in `IRoleManagement` has an overload taking `clientUuid` as its first parameter. The existing overloads keep using the configured `ClientUuid`.
+- Client role CRUD: `GetClientRoleAsync`, `CreateClientRoleAsync`, `UpdateClientRoleAsync`, `DeleteClientRoleAsync`, with role attributes.
+- `GetUserClientRolesAsync` (a user's client-role mappings) and `GetClientRoleUsersAsync` (users holding a client role, with `first`/`max` pagination).
+- `ClientRoleResponseDto.Attributes`, populated by single-role lookups.
 - `GetAllUsersAsync` streams users across pages with filters, a starting offset, a total result limit, and cancellation support. Failed pages throw `KeycloakException` instead of silently ending enumeration.
 - Named Keycloak connections using keyed services, with separate configuration, HTTP clients, and token caches for each realm.
 - Tests for named connection isolation and two realms sharing the same server and client ID.
@@ -16,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A develop test workflow that builds all targets and runs unit and integration tests without publishing packages.
 
 ### Changed
+- Custom implementations of `IRoleManagement` must implement the new client-role overloads and methods.
+- Client role names and client UUIDs are now URL-escaped in request paths, so names containing `/`, `#`, `?` or spaces address the right role.
 - Custom implementations of `IUserManagement` must implement the new email and user streaming methods. Applications using the SDK's registered `UserManagement` do not need DI changes.
 
 ## [2.0.0] - 2026-10-04
