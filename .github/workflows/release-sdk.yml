@@ -45,6 +45,9 @@ jobs:
     name: Pack & Publish to NuGet
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # NuGet Trusted Publishing exchanges the GitHub OIDC token for a short-lived API key
     steps:
       - uses: actions/checkout@v4
 
@@ -65,8 +68,14 @@ jobs:
       - name: Pack
         run: dotnet pack Keycloak.Net.Sdk/Keycloak.Net.Sdk.csproj --configuration Release --no-build --output ./nupkgs
 
+      - name: NuGet login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: MiladRv # nuget.org profile name of the package owner
+
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+        run: dotnet nuget push ./nupkgs/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --skip-duplicate
 
       - name: Upload package
         uses: actions/upload-artifact@v4
