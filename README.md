@@ -3,6 +3,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Keycloak.Net.Sdk?label=Keycloak.Net.Sdk)](https://www.nuget.org/packages/Keycloak.Net.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/Keycloak.Net.Sdk.Aspire?label=Keycloak.Net.Sdk.Aspire)](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire)
 [![NuGet](https://img.shields.io/nuget/v/Keycloak.Net.Sdk.Aspire.Hosting?label=Keycloak.Net.Sdk.Aspire.Hosting)](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire.Hosting)
+[![NuGet](https://img.shields.io/nuget/v/Keycloak.Net.Sdk.AspNetCore?label=Keycloak.Net.Sdk.AspNetCore)](https://www.nuget.org/packages/Keycloak.Net.Sdk.AspNetCore)
 [![Release SDK](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-sdk.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-sdk.yml)
 [![Release Aspire](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -24,6 +25,7 @@ These additions are available on `develop` and have not been released on NuGet y
 - [User emails](docs/user-management.md#user-emails): email verification, password reset, and required action emails.
 - [Multiple realms](docs/multiple-realms.md): named connections with separate configuration and token caches.
 - [User streaming](docs/user-management.md#stream-users): `GetAllUsersAsync` with automatic pagination and cancellation.
+- [ASP.NET Core package](docs/aspnetcore.md): `Keycloak.Net.Sdk.AspNetCore` validates Keycloak tokens in your API, maps Keycloak roles to role claims, and filters data by token attributes.
 
 ## Why this SDK?
 
@@ -40,6 +42,7 @@ If you're on **.NET Aspire**, two additional packages wire the SDK automatically
 | [`Keycloak.Net.Sdk`](https://www.nuget.org/packages/Keycloak.Net.Sdk) | Core SDK: all managers, token handler, retry |
 | [`Keycloak.Net.Sdk.Aspire`](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire) | Client integration: `AddKeycloakSdk()` reads Aspire connection string |
 | [`Keycloak.Net.Sdk.Aspire.Hosting`](https://www.nuget.org/packages/Keycloak.Net.Sdk.Aspire.Hosting) | AppHost integration: `AddKeycloak()` adds Keycloak as a container resource |
+| [`Keycloak.Net.Sdk.AspNetCore`](https://www.nuget.org/packages/Keycloak.Net.Sdk.AspNetCore) | API side: `AddKeycloakJwtBearer()`, Keycloak roles as role claims, role policies, data scope (`WhereInScope`) |
 
 ---
 
@@ -163,6 +166,7 @@ Or use `IGroupManagement` to organize users into groups:
 - [Group Management](docs/group-management.md)
 - [Session Management](docs/session-management.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
+- [ASP.NET Core Integration](docs/aspnetcore.md)
 - [Changelog](CHANGELOG.md)
 
 ---
@@ -219,7 +223,7 @@ Keycloak.Net.Sdk/                  # SDK source
 ├── UserSessions/                  # UserSessionManagement + DTOs
 └── Users/                         # UserManagement + DTOs
 
-Keycloak.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler)
+Keycloak.Net.Sdk.AspNetCore/       # API-side package: JWT bearer, role claims, data scope.Net.Sdk.UnitTests/        # Unit tests (Moq, FakeHttpMessageHandler, in-memory TestServer)
 Keycloak.Net.Sdk.IntegrationTests/ # Integration tests (Testcontainers.Keycloak)
 ```
 
