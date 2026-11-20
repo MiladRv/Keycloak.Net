@@ -1,3 +1,7 @@
+using Keycloak.Net.Sdk.IdentityProviders;
+using Keycloak.Net.Sdk.IdentityProviders.Contracts;
+using Keycloak.Net.Sdk.UserFederation;
+using Keycloak.Net.Sdk.UserFederation.Contracts;
 using Keycloak.Net.Sdk.Authentications;
 using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Authorization;
@@ -70,6 +74,8 @@ public static partial class ServiceRegistrations
         services.AddScoped<IUserSessionManagement, UserSessionManagement>();
         services.AddScoped<IAuthorizationManagement, AuthorizationManagement>();
         services.AddScoped<IEventManagement, EventManagement>();
+        services.AddScoped<IIdentityProviderManagement, IdentityProviderManagement>();
+        services.AddScoped<IUserFederationManagement, UserFederationManagement>();
 
         return services;
     }

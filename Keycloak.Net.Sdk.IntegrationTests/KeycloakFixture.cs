@@ -29,7 +29,10 @@ public class KeycloakFixture : IAsyncLifetime
     private INetwork _network = null!;
     private IContainer _smtp = null!;
 
-    public Uri MailpitUrl => new($"http://{_smtp.Hostname}:{_smtp.GetMappedPublicPort(8025)}/");
+    /// <summary>The Docker network Keycloak runs on, for tests that start containers Keycloak must reach.</summary>
+    public INetwork Network => _network;
+
+    public Uri MailpitUrl =>new($"http://{_smtp.Hostname}:{_smtp.GetMappedPublicPort(8025)}/");
 
     // ── Public state consumed by tests ────────────────────────────────────────
     public IServiceProvider Services          { get; private set; } = null!;
