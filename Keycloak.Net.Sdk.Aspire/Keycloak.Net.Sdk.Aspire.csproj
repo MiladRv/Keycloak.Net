@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.0</Version>
+        <Version>1.1.0</Version>
         <Authors>Milad.Rv</Authors>
         <Title>Keycloak.Net.Sdk.Aspire</Title>
         <Description>.NET Aspire client integration for Keycloak.Net.Sdk — wires the SDK into a dependent project using the Aspire-injected connection string</Description>

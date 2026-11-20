@@ -4,6 +4,10 @@
 
 ---
 
+## Requirements
+
+- Targets .NET 8, .NET 9 and .NET 10. This package does not depend on Aspire itself, so it works with any Aspire version that injects `ConnectionStrings__<name>`, including Aspire 13. It is versioned and released together with `Keycloak.Net.Sdk.Aspire.Hosting`, which since 1.1.0 requires an Aspire 13 AppHost.
+
 ## Installation
 
 ```bash

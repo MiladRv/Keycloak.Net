@@ -4,6 +4,11 @@
 
 ---
 
+## Requirements
+
+- An Aspire **13** AppHost. Since 1.1.0 this package depends on `Aspire.Hosting` 13.6.5 or later. Version 1.0.0 depended on `Aspire.Hosting` 9.0.0, which has the high-severity advisory [GHSA-f7vh-h5g3-7jrh](https://github.com/advisories/GHSA-f7vh-h5g3-7jrh). AppHosts still on Aspire 9 must upgrade the Aspire SDK and hosting packages to 13.x before taking this version.
+- Targets .NET 8, .NET 9 and .NET 10; no target framework was dropped. `Aspire.Hosting` 13 brings in `Microsoft.Extensions.*` 10.x packages, also on .NET 8.
+
 ## Installation
 
 ```bash
