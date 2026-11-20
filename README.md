@@ -25,6 +25,7 @@ These additions are available on `develop` and have not been released on NuGet y
 - [User emails](docs/user-management.md#user-emails): email verification, password reset, and required action emails.
 - [Multiple realms](docs/multiple-realms.md): named connections with separate configuration and token caches.
 - [User streaming](docs/user-management.md#stream-users): `GetAllUsersAsync` with automatic pagination and cancellation.
+- [Authorization Services](docs/authorization-services.md): `IAuthorizationManagement` for resources, scopes, policies and permissions, and permission checks.
 - [ASP.NET Core package](docs/aspnetcore.md): `Keycloak.Net.Sdk.AspNetCore` validates Keycloak tokens in your API, maps Keycloak roles to role claims, and filters data by token attributes.
 
 ## Why this SDK?
@@ -135,6 +136,7 @@ Or use `IGroupManagement` to organize users into groups:
 - **Realm management**: create, get, update, delete realms
 - **Group management**: create/update/delete groups with attributes, child groups and lookup by path, add/remove and list members
 - **Session management**: get active sessions, revoke a session, logout all devices
+- **Authorization Services**: resource servers, resources, scopes, role/group/user policies, resource and scope permissions; check a user's permissions (UMA), list granted permissions, get an RPT, admin-side evaluation
 - **Resilience**: built-in retry policy via `Microsoft.Extensions.Http.Resilience`
 - **Auto Bearer**: `DelegatingHandler` that attaches tokens transparently
 - **Full DI**: `IHttpClientFactory`-based, all interfaces injectable
@@ -152,6 +154,7 @@ Or use `IGroupManagement` to organize users into groups:
 | `ITokenManagement` | Get service-account token, revoke |
 | `IGroupManagement` | Groups with attributes, hierarchy (children, by path), members |
 | `IUserSessionManagement` | Get active sessions, revoke, logout all |
+| `IAuthorizationManagement` | Authorization Services: resources, scopes, policies, permissions, permission checks and evaluation |
 
 ---
 
@@ -165,6 +168,7 @@ Or use `IGroupManagement` to organize users into groups:
 - [Realm Management](docs/realm-management.md)
 - [Group Management](docs/group-management.md)
 - [Session Management](docs/session-management.md)
+- [Authorization Services](docs/authorization-services.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
 - [ASP.NET Core Integration](docs/aspnetcore.md)
 - [Changelog](CHANGELOG.md)
@@ -213,6 +217,7 @@ dotnet test
 ```
 Keycloak.Net.Sdk/                  # SDK source
 ├── Authentications/               # TokenProvider, TokenManagement, KeycloakAuthHandler
+├── Authorization/                 # AuthorizationManagement (Authorization Services) + DTOs
 ├── Clients/                       # ClientManagement + DTOs
 ├── Configurations/                # KeycloakConfiguration
 ├── Contracts/                     # Shared response types (KeycloakBaseResponse)

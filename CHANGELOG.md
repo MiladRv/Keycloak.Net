@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Authorization Services: `IAuthorizationManagement` to enable authorization on a client and configure its resource server; manage scopes, resources, role/group/user policies and resource/scope permissions; check a user's permission (`CheckPermissionAsync`), list granted permissions, get a requesting party token, and evaluate a user's permissions as an administrator (`EvaluateAsync`). Registered by `AddKeycloak` and named connections.
 - New package `Keycloak.Net.Sdk.AspNetCore` (1.0.0) for APIs that accept Keycloak access tokens: `AddKeycloakJwtBearer`, realm and client roles as role claims, `RequireRealmRole` / `RequireClientRole` policies, `ClaimsPrincipal` helpers (`GetRealmRoles`, `GetClientRoles`, `GetAttributeValues`, ...), and `DataScope` with `WhereInScope` for filtering queries by token attributes. Released with `aspnetcore/v*` tags.
 - Realm role composites: `GetRealmRoleCompositesAsync`, `GetRealmRoleClientCompositesAsync`, `AddRealmRoleCompositesAsync` and `RemoveRealmRoleCompositesAsync`. A composite realm role can contain realm and client roles.
 - User search by attribute: `GetUsersQueryDto.Attributes` (sent as Keycloak's `q` parameter; terms with spaces or colons are quoted). Also `Exact` and `EmailVerified` filters.

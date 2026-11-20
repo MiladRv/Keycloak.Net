@@ -1,3 +1,5 @@
+using Keycloak.Net.Sdk.Authorization;
+using Keycloak.Net.Sdk.Authorization.Contracts;
 using Keycloak.Net.Sdk.Authentications;
 using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Clients;
@@ -81,6 +83,7 @@ public static partial class ServiceRegistrations
         services.AddKeyedScoped<IClientManagement>(name, (provider, _) => new ClientManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IGroupManagement>(name, (provider, _) => new GroupManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IUserSessionManagement>(name, (provider, _) => new UserSessionManagement(Factory(provider, name), Settings(provider, name)));
+        services.AddKeyedScoped<IAuthorizationManagement>(name, (provider, _) => new AuthorizationManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IKeycloakManagement>(name, (provider, _) => new KeycloakManagement(
             provider.GetRequiredKeyedService<IUserManagement>(name),
             provider.GetRequiredKeyedService<IRoleManagement>(name),
