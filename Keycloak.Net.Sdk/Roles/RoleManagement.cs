@@ -313,6 +313,20 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
     public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetGroupEffectiveClientRolesAsync(string clientUuid, string groupId, CancellationToken cancellationToken = default)
         => GetAsync<List<ClientRoleResponseDto>>($"{GroupClientRoleMappingsUrl(clientUuid, groupId)}/composite", cancellationToken);
 
+    // ── Realm Role Composites ─────────────────────────────────────────────────
+
+    public Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetRealmRoleCompositesAsync(string roleName, CancellationToken cancellationToken = default)
+        => GetAsync<List<RealmRoleResponseDto>>($"{RealmRoleUrl(roleName)}/composites/realm", cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetRealmRoleClientCompositesAsync(string clientUuid, string roleName, CancellationToken cancellationToken = default)
+        => GetAsync<List<ClientRoleResponseDto>>($"{RealmRoleUrl(roleName)}/composites/clients/{Uri.EscapeDataString(clientUuid)}", cancellationToken);
+
+    public Task<KeycloakBaseResponse> AddRealmRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default)
+        => SendAsync(HttpMethod.Post, $"{RealmRoleUrl(roleName)}/composites", JsonContent(composites), cancellationToken);
+
+    public Task<KeycloakBaseResponse> RemoveRealmRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default)
+        => SendAsync(HttpMethod.Delete, $"{RealmRoleUrl(roleName)}/composites", JsonContent(composites), cancellationToken);
+
     private string RealmRoleUrl(string roleName) =>
         $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{Uri.EscapeDataString(roleName)}";
 }

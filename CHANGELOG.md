@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Realm role composites: `GetRealmRoleCompositesAsync`, `GetRealmRoleClientCompositesAsync`, `AddRealmRoleCompositesAsync` and `RemoveRealmRoleCompositesAsync`. A composite realm role can contain realm and client roles.
 - User search by attribute: `GetUsersQueryDto.Attributes` (sent as Keycloak's `q` parameter; terms with spaces or colons are quoted). Also `Exact` and `EmailVerified` filters.
 - `GetUsersCountAsync` returns the number of users matching a query, as `CountResponseDto`.
 - Group hierarchy: `CreateChildGroupAsync`, `GetChildGroupsAsync` (paginated, Keycloak 23+) and `GetGroupByPathAsync`.

@@ -46,6 +46,13 @@ public interface IRoleManagement
     Task<KeycloakBaseResponse> UpdateRealmRoleAsync(string roleName, UpdateRealmRoleRequestDto requestDto, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteRealmRoleAsync(string roleName, CancellationToken cancellationToken = default);
 
+    // ── Realm Role Composites ─────────────────────────────────────────────────
+    // A composite realm role can contain realm roles and client roles; add/remove accept both (by id).
+    Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetRealmRoleCompositesAsync(string roleName, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetRealmRoleClientCompositesAsync(string clientUuid, string roleName, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> AddRealmRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> RemoveRealmRoleCompositesAsync(string roleName, List<CompositeRoleRequestDto> composites, CancellationToken cancellationToken = default);
+
     // ── Realm Role ↔ User ─────────────────────────────────────────────────────
     Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetUserRealmRolesAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> AssignRealmRoleToUserAsync(string userId, string roleId, string roleName, CancellationToken cancellationToken = default);
