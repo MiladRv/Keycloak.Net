@@ -1,3 +1,7 @@
+using Keycloak.Net.Sdk.IdentityProviders;
+using Keycloak.Net.Sdk.IdentityProviders.Contracts;
+using Keycloak.Net.Sdk.UserFederation;
+using Keycloak.Net.Sdk.UserFederation.Contracts;
 using Keycloak.Net.Sdk.Events;
 using Keycloak.Net.Sdk.Events.Contracts;
 using Keycloak.Net.Sdk.Authorization;
@@ -87,6 +91,8 @@ public static partial class ServiceRegistrations
         services.AddKeyedScoped<IUserSessionManagement>(name, (provider, _) => new UserSessionManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IAuthorizationManagement>(name, (provider, _) => new AuthorizationManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IEventManagement>(name, (provider, _) => new EventManagement(Factory(provider, name), Settings(provider, name)));
+        services.AddKeyedScoped<IIdentityProviderManagement>(name, (provider, _) => new IdentityProviderManagement(Factory(provider, name), Settings(provider, name)));
+        services.AddKeyedScoped<IUserFederationManagement>(name, (provider, _) => new UserFederationManagement(Factory(provider, name), Settings(provider, name)));
         services.AddKeyedScoped<IKeycloakManagement>(name, (provider, _) => new KeycloakManagement(
             provider.GetRequiredKeyedService<IUserManagement>(name),
             provider.GetRequiredKeyedService<IRoleManagement>(name),

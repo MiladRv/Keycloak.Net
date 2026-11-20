@@ -136,6 +136,8 @@ Or use `IGroupManagement` to organize users into groups:
 - **Realm management**: create, get, update, delete realms
 - **Group management**: create/update/delete groups with attributes, child groups and lookup by path, add/remove and list members
 - **Session management**: get active sessions, revoke a session, logout all devices
+- **Identity providers**: external logins (OIDC, SAML, social) with CRUD, mappers, and linking users to external accounts
+- **User federation**: LDAP / Active Directory providers: CRUD, connection test, full and changed-users sync, remove or unlink imported users
 - **Events**: enable and configure the realm's audit trail; query user events (logins, failures, ...) and admin events (who changed what); clear events
 - **Authorization Services**: resource servers, resources, scopes, role/group/user policies, resource and scope permissions; check a user's permissions (UMA), list granted permissions, get an RPT, admin-side evaluation
 - **Resilience**: built-in retry policy via `Microsoft.Extensions.Http.Resilience`
@@ -155,6 +157,8 @@ Or use `IGroupManagement` to organize users into groups:
 | `ITokenManagement` | Get service-account token, revoke |
 | `IGroupManagement` | Groups with attributes, hierarchy (children, by path), members |
 | `IUserSessionManagement` | Get active sessions, revoke, logout all |
+| `IIdentityProviderManagement` | Identity providers, their mappers, users' linked external accounts |
+| `IUserFederationManagement` | LDAP / user storage providers, connection test, sync |
 | `IEventManagement` | Events configuration, user events, admin events, clear |
 | `IAuthorizationManagement` | Authorization Services: resources, scopes, policies, permissions, permission checks and evaluation |
 
@@ -172,6 +176,8 @@ Or use `IGroupManagement` to organize users into groups:
 - [Session Management](docs/session-management.md)
 - [Authorization Services](docs/authorization-services.md)
 - [Events](docs/events.md)
+- [Identity Providers](docs/identity-providers.md)
+- [User Federation](docs/user-federation.md)
 - [.NET Aspire Integration](docs/aspire-integration.md)
 - [ASP.NET Core Integration](docs/aspnetcore.md)
 - [Changelog](CHANGELOG.md)
@@ -220,6 +226,8 @@ dotnet test
 ```
 Keycloak.Net.Sdk/                  # SDK source
 ├── Authentications/               # TokenProvider, TokenManagement, KeycloakAuthHandler
+├── IdentityProviders/             # IdentityProviderManagement + DTOs
+├── UserFederation/                # UserFederationManagement (LDAP, sync) + DTOs
 ├── Events/                        # EventManagement (user and admin events) + DTOs
 ├── Authorization/                 # AuthorizationManagement (Authorization Services) + DTOs
 ├── Clients/                       # ClientManagement + DTOs
