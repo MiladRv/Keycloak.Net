@@ -6,41 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-20
+
 ### Added
-- Identity providers: `IIdentityProviderManagement` for identity provider CRUD (update merges fields and config), mappers, and linking/unlinking users to external accounts.
-- User federation: `IUserFederationManagement` for LDAP and other user storage providers: CRUD (create fills in realm id and provider type and returns the stored provider), mappers, `TestLdapConnectionAsync`, full and changed-users sync, removing and unlinking imported users. Keycloak reports a successful, empty sync when LDAP is unreachable; use `TestLdapConnectionAsync` to check.
-- Integration tests start an OpenLDAP container on Keycloak's network for the federation tests (`KeycloakFixture.Network`).
-- Events: `IEventManagement` to read and update the realm's events configuration (merged into the existing one), query user events and admin events with filters, and clear them. Registered by `AddKeycloak` and named connections.
-- Authorization Services: `IAuthorizationManagement` to enable authorization on a client and configure its resource server; manage scopes, resources, role/group/user policies and resource/scope permissions; check a user's permission (`CheckPermissionAsync`), list granted permissions, get a requesting party token, and evaluate a user's permissions as an administrator (`EvaluateAsync`). Registered by `AddKeycloak` and named connections.
-- New package `Keycloak.Net.Sdk.AspNetCore` (1.0.0) for APIs that accept Keycloak access tokens: `AddKeycloakJwtBearer`, realm and client roles as role claims, `RequireRealmRole` / `RequireClientRole` policies, `ClaimsPrincipal` helpers (`GetRealmRoles`, `GetClientRoles`, `GetAttributeValues`, ...), and `DataScope` with `WhereInScope` for filtering queries by token attributes. Released with `aspnetcore/v*` tags.
+
+**Roles**
+- Client-role operations can target any client in the realm: every client-role method in `IRoleManagement` has an overload taking `clientUuid` as its first parameter. The existing overloads keep using the configured `ClientUuid`.
+- Client role CRUD: `GetClientRoleAsync`, `CreateClientRoleAsync`, `UpdateClientRoleAsync`, `DeleteClientRoleAsync`, with role attributes; `ClientRoleResponseDto.Attributes`, populated by single-role lookups.
+- `GetUserClientRolesAsync` (a user's client-role mappings) and `GetClientRoleUsersAsync` (users holding a client role, with `first`/`max` pagination).
+- Realm role attributes (`CreateRealmRoleRequestDto.Attributes`, `RealmRoleResponseDto.Attributes`) and `UpdateRealmRoleAsync`.
 - Realm role composites: `GetRealmRoleCompositesAsync`, `GetRealmRoleClientCompositesAsync`, `AddRealmRoleCompositesAsync` and `RemoveRealmRoleCompositesAsync`. A composite realm role can contain realm and client roles.
-- User search by attribute: `GetUsersQueryDto.Attributes` (sent as Keycloak's `q` parameter; terms with spaces or colons are quoted). Also `Exact` and `EmailVerified` filters.
-- `GetUsersCountAsync` returns the number of users matching a query, as `CountResponseDto`.
+- Client roles on groups: `GetGroupClientRolesAsync`, `AssignClientRoleToGroupAsync`, `RemoveClientRoleFromGroupAsync`, each with a `clientUuid` overload.
+- Effective roles: `GetUserEffectiveRealmRolesAsync`, `GetUserEffectiveClientRolesAsync`, `GetGroupEffectiveRealmRolesAsync`, `GetGroupEffectiveClientRolesAsync`.
+
+**Groups**
 - Group hierarchy: `CreateChildGroupAsync`, `GetChildGroupsAsync` (paginated, Keycloak 23+) and `GetGroupByPathAsync`.
 - `GetGroupMembersAsync` with `first`/`max` pagination.
 - Group attributes: `CreateGroupRequestDto.Attributes`, `UpdateGroupRequestDto.Attributes` and `GroupResponseDto.Attributes`; `GroupResponseDto` also exposes `ParentId` and `SubGroupCount`.
-- Realm role attributes (`CreateRealmRoleRequestDto.Attributes`, `RealmRoleResponseDto.Attributes`) and `UpdateRealmRoleAsync`.
-- Client roles on groups: `GetGroupClientRolesAsync`, `AssignClientRoleToGroupAsync`, `RemoveClientRoleFromGroupAsync`, each with a `clientUuid` overload.
-- Effective roles: `GetUserEffectiveRealmRolesAsync`, `GetUserEffectiveClientRolesAsync`, `GetGroupEffectiveRealmRolesAsync`, `GetGroupEffectiveClientRolesAsync`.
-- Client-role operations can target any client in the realm: every client-role method in `IRoleManagement` has an overload taking `clientUuid` as its first parameter. The existing overloads keep using the configured `ClientUuid`.
-- Client role CRUD: `GetClientRoleAsync`, `CreateClientRoleAsync`, `UpdateClientRoleAsync`, `DeleteClientRoleAsync`, with role attributes.
-- `GetUserClientRolesAsync` (a user's client-role mappings) and `GetClientRoleUsersAsync` (users holding a client role, with `first`/`max` pagination).
-- `ClientRoleResponseDto.Attributes`, populated by single-role lookups.
+
+**Users**
+- User search by attribute: `GetUsersQueryDto.Attributes` (sent as Keycloak's `q` parameter; terms with spaces or colons are quoted). Also `Exact` and `EmailVerified` filters.
+- `GetUsersCountAsync` returns the number of users matching a query, as `CountResponseDto`.
 - `GetAllUsersAsync` streams users across pages with filters, a starting offset, a total result limit, and cancellation support. Failed pages throw `KeycloakException` instead of silently ending enumeration.
+- User email operations: `SendVerificationEmailAsync`, `SendPasswordResetEmailAsync`, and `ExecuteActionsEmailAsync`, with optional client, redirect URI, and link lifetime settings. Required action constants and support for custom action IDs.
+
+**New services** (registered by `AddKeycloak` and named connections; not part of `IKeycloakManagement`)
+- Authorization Services: `IAuthorizationManagement` to enable authorization on a client and configure its resource server; manage scopes, resources, role/group/user policies and resource/scope permissions; check a user's permission (`CheckPermissionAsync`), list granted permissions, get a requesting party token, and evaluate a user's permissions as an administrator (`EvaluateAsync`).
+- Events: `IEventManagement` to read and update the realm's events configuration (merged into the existing one), query user events and admin events with filters, and clear them.
+- Identity providers: `IIdentityProviderManagement` for identity provider CRUD (update merges fields and config), mappers, and linking/unlinking users to external accounts.
+- User federation: `IUserFederationManagement` for LDAP and other user storage providers: CRUD (create fills in realm id and provider type and returns the stored provider), mappers, `TestLdapConnectionAsync`, full and changed-users sync, removing and unlinking imported users. Keycloak reports a successful, empty sync when LDAP is unreachable; use `TestLdapConnectionAsync` to check.
+
+**Configuration**
 - Named Keycloak connections using keyed services, with separate configuration, HTTP clients, and token caches for each realm.
+
+**Tests and build**
+- Integration tests run against Keycloak 26.7.2 instead of the Testcontainers default (21.1). The test realm enables unmanaged user attributes and the test user has a complete profile, as Keycloak 24+ requires.
+- Integration tests capture Keycloak emails in a local Mailpit container, and start an OpenLDAP container on Keycloak's network for the federation tests (`KeycloakFixture.Network`).
 - Tests for named connection isolation and two realms sharing the same server and client ID.
-- User email operations: `SendVerificationEmailAsync`, `SendPasswordResetEmailAsync`, and `ExecuteActionsEmailAsync`, with optional client, redirect URI, and link lifetime settings.
-- Required action constants and support for custom action IDs.
-- Integration tests that capture Keycloak emails in a local Mailpit container and check the action links.
 - A develop test workflow that builds all targets and runs unit and integration tests without publishing packages.
 
 ### Changed
-- Custom implementations of `IGroupManagement` must implement the new hierarchy and member methods.
-- Realm role names are now URL-escaped in request paths.
-- Integration tests run against Keycloak 26.7.2 instead of the Testcontainers default (21.1). The test realm enables unmanaged user attributes and the test user has a complete profile, as Keycloak 24+ requires.
-- Custom implementations of `IRoleManagement` must implement the new client-role overloads and methods.
-- Client role names and client UUIDs are now URL-escaped in request paths, so names containing `/`, `#`, `?` or spaces address the right role.
-- Custom implementations of `IUserManagement` must implement the new email, user streaming and `GetUsersCountAsync` methods. Applications using the SDK's registered `UserManagement` do not need DI changes.
+- Role names and client UUIDs are now URL-escaped in request paths, so names containing `/`, `#`, `?` or spaces address the right role.
+- Custom implementations of `IUserManagement`, `IRoleManagement` and `IGroupManagement` (for example hand-written fakes) must implement the new members. Applications that use the SDK's registered implementations need no changes.
+
+### Other packages
+- **`Keycloak.Net.Sdk.AspNetCore` 1.0.0** (new) for APIs that accept Keycloak access tokens: `AddKeycloakJwtBearer`, realm and client roles as role claims, `RequireRealmRole` / `RequireClientRole` policies, `ClaimsPrincipal` helpers (`GetRealmRoles`, `GetClientRoles`, `GetAttributeValues`, ...), and `DataScope` with `WhereInScope` for filtering queries by token attributes. Released with `aspnetcore/v*` tags.
 
 ## [2.0.0] - 2026-10-04
 

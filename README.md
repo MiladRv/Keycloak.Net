@@ -6,6 +6,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Keycloak.Net.Sdk.AspNetCore?label=Keycloak.Net.Sdk.AspNetCore)](https://www.nuget.org/packages/Keycloak.Net.Sdk.AspNetCore)
 [![Release SDK](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-sdk.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-sdk.yml)
 [![Release Aspire](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspire.yml)
+[![Release AspNetCore](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspnetcore.yml/badge.svg)](https://github.com/MiladRv/Keycloak.Net/actions/workflows/release-aspnetcore.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A modular .NET SDK for the **Keycloak Admin REST API**: typed interfaces, built-in retry, auto-attached Bearer tokens, and first-class **.NET Aspire** support. Targets **.NET 8**, **.NET 9**, and **.NET 10**.
@@ -18,15 +19,17 @@ Version 2.0 includes API changes. See the [migration guide](docs/migration-2.0.m
 
 ---
 
-## Features on develop
+## What's new in 2.1
 
-These additions are available on `develop` and have not been released on NuGet yet:
+- **Fine-grained roles**: client roles on any client, realm and client role composites, roles on groups, and [effective roles](docs/role-management.md#effective-roles) (direct + groups + composites).
+- **Organisation trees**: [group hierarchy](docs/group-management.md#hierarchy), group and role attributes, group members.
+- **User search**: [by attribute](docs/user-management.md#search-by-attribute), exact match, and [user count](docs/user-management.md#count-users); [streaming](docs/user-management.md#stream-users) across pages; [user emails](docs/user-management.md#user-emails).
+- **[Authorization Services](docs/authorization-services.md)**: resources, scopes, policies, permissions, permission checks and evaluation.
+- **[Events](docs/events.md)**, **[identity providers](docs/identity-providers.md)** and **[user federation](docs/user-federation.md)** (LDAP / Active Directory).
+- **[Multiple realms](docs/multiple-realms.md)**: named connections with separate configuration and token caches.
+- **New package [`Keycloak.Net.Sdk.AspNetCore`](docs/aspnetcore.md)**: validate Keycloak tokens in your API, use Keycloak roles with `[Authorize]`, and filter data by token attributes.
 
-- [User emails](docs/user-management.md#user-emails): email verification, password reset, and required action emails.
-- [Multiple realms](docs/multiple-realms.md): named connections with separate configuration and token caches.
-- [User streaming](docs/user-management.md#stream-users): `GetAllUsersAsync` with automatic pagination and cancellation.
-- [Authorization Services](docs/authorization-services.md): `IAuthorizationManagement` for resources, scopes, policies and permissions, and permission checks.
-- [ASP.NET Core package](docs/aspnetcore.md): `Keycloak.Net.Sdk.AspNetCore` validates Keycloak tokens in your API, maps Keycloak roles to role claims, and filters data by token attributes.
+See the [changelog](CHANGELOG.md) for the full list.
 
 ## Why this SDK?
 
