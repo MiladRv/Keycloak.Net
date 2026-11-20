@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Aspire packages 1.1.0 (`aspire/v1.1.0`)
+
+`Keycloak.Net.Sdk.Aspire` and `Keycloak.Net.Sdk.Aspire.Hosting` are released together.
+
+#### Security
+- `Keycloak.Net.Sdk.Aspire.Hosting` now depends on `Aspire.Hosting` 13.6.5 instead of 9.0.0. `Aspire.Hosting` 9.0.0 has a high-severity elevation-of-privilege advisory ([GHSA-f7vh-h5g3-7jrh](https://github.com/advisories/GHSA-f7vh-h5g3-7jrh), fixed in 13.6.5) and brought in `KubernetesClient` 15.0.1 ([GHSA-w7r3-mgwf-4mqq](https://github.com/advisories/GHSA-w7r3-mgwf-4mqq)); 13.6.5 brings in `KubernetesClient` 19.0.2. Packing the Aspire packages no longer reports NU1902/NU1903 warnings.
+
+#### Changed
+- **AppHosts must use Aspire 13.** Projects on Aspire 9 must upgrade the Aspire SDK and hosting packages before taking `Keycloak.Net.Sdk.Aspire.Hosting` 1.1.0. `Aspire.Hosting` 13 also brings in `Microsoft.Extensions.*` 10.x packages, on .NET 8 too.
+- No public API changes: `AddKeycloak()`, `WithRealmImport()` and `AddKeycloakSdk()` keep their signatures and behaviour. Both packages still target .NET 8, .NET 9 and .NET 10.
+- `Keycloak.Net.Sdk.Aspire` has no Aspire dependency and only gets the version bump.
+
+#### Tests and build
+- Unit tests for `Keycloak.Net.Sdk.Aspire.Hosting`: container image and tag, HTTP endpoint and port, admin environment variables, `start-dev` / `--import-realm` arguments, the realm bind mount, and the connection string expression.
+- `release-aspire.yml` validates the tag the same way as `release-sdk.yml`: the tagged commit must be on `main` and the tag must be `aspire/v<Version>` from the csproj, then unit and integration tests run before publishing. It used to gate publishing on `github.event.base_ref`, which is often empty for tag pushes, so publishing could be skipped.
+
 ## [2.1.0] - 2026-11-20
 
 ### Added
