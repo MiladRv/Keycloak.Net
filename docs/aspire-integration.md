@@ -7,6 +7,15 @@ Two packages provide first-class [.NET Aspire](https://learn.microsoft.com/en-us
 | `Keycloak.Net.Sdk.Aspire.Hosting` | AppHost — adds Keycloak as a container resource |
 | `Keycloak.Net.Sdk.Aspire` | Dependent projects — wires the SDK using the Aspire-injected URL |
 
+## Requirements
+
+| Package | Version | Requires |
+|---------|---------|----------|
+| `Keycloak.Net.Sdk.Aspire.Hosting` | 1.1.0 | Aspire 13 AppHost (`Aspire.Hosting` 13.6.5+); .NET 8, 9 or 10 |
+| `Keycloak.Net.Sdk.Aspire` | 1.1.0 | .NET 8, 9 or 10; no Aspire package dependency |
+
+`Keycloak.Net.Sdk.Aspire.Hosting` 1.0.0 depended on `Aspire.Hosting` 9.0.0. That version has a high-severity elevation-of-privilege advisory ([GHSA-f7vh-h5g3-7jrh](https://github.com/advisories/GHSA-f7vh-h5g3-7jrh)) and brings in a vulnerable `KubernetesClient` ([GHSA-w7r3-mgwf-4mqq](https://github.com/advisories/GHSA-w7r3-mgwf-4mqq)). Upgrade to 1.1.0; AppHosts still on Aspire 9 must move to Aspire 13 first. No target framework was dropped, and the API is unchanged.
+
 ## AppHost Setup
 
 ```bash
