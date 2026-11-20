@@ -47,6 +47,7 @@ public class KeycloakFixture : IAsyncLifetime
     public const string     Realm             = "sdk-integration";
     public const string     SecondaryRealm    = "sdk-secondary";
     public const string     SdkClientId       = "sdk-client";
+    public const string     KeycloakImage     = "quay.io/keycloak/keycloak:26.7.2";
 
     private const string AdminUsername = "admin";
     private const string AdminPassword = "admin";
@@ -63,7 +64,9 @@ public class KeycloakFixture : IAsyncLifetime
             .Build();
         await _smtp.StartAsync();
 
-        _container = new KeycloakBuilder().WithNetwork(_network).Build();
+        // Pinned to a current Keycloak release; the Testcontainers default (21.1) predates
+        // admin endpoints the SDK uses, such as GET /groups/{id}/children (Keycloak 23+).
+        _container = new KeycloakBuilder(KeycloakImage).WithNetwork(_network).Build();
         await _container.StartAsync();
 
         var baseAddress = _container.GetBaseAddress().TrimEnd('/');
@@ -164,6 +167,31 @@ public class KeycloakFixture : IAsyncLifetime
                 smtpServer = new { host = "smtp", port = "1025", from = "sdk@example.test" }
             });
         (await http.SendAsync(req)).EnsureSuccessStatusCode();
+
+        await EnableUnmanagedUserAttributesAsync(http, token, realm);
+    }
+
+    /// <summary>
+    /// Keycloak 24+ enforces the declarative user profile and silently drops user attributes that
+    /// are not declared in it. Allow free-form attributes, as an application storing its own
+    /// user attributes through the SDK would.
+    /// </summary>
+    private static async Task EnableUnmanagedUserAttributesAsync(HttpClient http, string token, string realm)
+    {
+        var get = new HttpRequestMessage(HttpMethod.Get, $"admin/realms/{realm}/users/profile");
+        get.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await http.SendAsync(get);
+        resp.EnsureSuccessStatusCode();
+
+        var profile = System.Text.Json.Nodes.JsonNode.Parse(await resp.Content.ReadAsStringAsync())!.AsObject();
+        profile["unmanagedAttributePolicy"] = "ENABLED";
+
+        var put = new HttpRequestMessage(HttpMethod.Put, $"admin/realms/{realm}/users/profile")
+        {
+            Content = new StringContent(profile.ToJsonString(), Encoding.UTF8, "application/json")
+        };
+        put.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        (await http.SendAsync(put)).EnsureSuccessStatusCode();
     }
 
     private static async Task<string> CreateClientAsync(HttpClient http, string token, string realm, string clientId)
@@ -255,6 +283,12 @@ public class KeycloakFixture : IAsyncLifetime
             {
                 username,
                 enabled = true,
+                // Keycloak 24+ requires a complete profile (email, first and last name) before it
+                // issues tokens; without them the password grant fails with "Account is not fully set up".
+                email         = $"{username}@example.test",
+                emailVerified = true,
+                firstName     = "Sdk",
+                lastName      = "Tester",
                 credentials = new[] { new { type = "password", value = password, temporary = false } }
             });
         var resp = await http.SendAsync(req);

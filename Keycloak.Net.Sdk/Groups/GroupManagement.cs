@@ -5,6 +5,7 @@ using Keycloak.Net.Sdk.Configurations;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Keycloak.Net.Sdk.Groups.Contracts;
+using Keycloak.Net.Sdk.Users.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace Keycloak.Net.Sdk.Groups;
@@ -65,6 +66,7 @@ public sealed class GroupManagement(IHttpClientFactory httpClientFactory, IOptio
         var existingGroup = JsonNode.Parse(await getResponse.Content.ReadAsStringAsync(cancellationToken))!.AsObject();
 
         if (requestDto.Name is not null) existingGroup["name"] = requestDto.Name;
+        if (requestDto.Attributes is not null) existingGroup["attributes"] = JsonSerializer.SerializeToNode(requestDto.Attributes);
 
         var request = new HttpRequestMessage(HttpMethod.Put, uri)
         {
@@ -98,5 +100,58 @@ public sealed class GroupManagement(IHttpClientFactory httpClientFactory, IOptio
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync<List<GroupResponseDto>>();
+    }
+
+    // ── Hierarchy ─────────────────────────────────────────────────────────────
+
+    public async Task<KeycloakBaseResponse> CreateChildGroupAsync(string parentGroupId, CreateGroupRequestDto requestDto, CancellationToken cancellationToken = default)
+    {
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{parentGroupId}/children";
+        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public async Task<KeycloakBaseResponse<List<GroupResponseDto>>> GetChildGroupsAsync(string parentGroupId, int? first = null, int? max = null, CancellationToken cancellationToken = default)
+    {
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{parentGroupId}/children{PaginationQuery(first, max)}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<List<GroupResponseDto>>();
+    }
+
+    public async Task<KeycloakBaseResponse<GroupResponseDto>> GetGroupByPathAsync(string path, CancellationToken cancellationToken = default)
+    {
+        // Escape each segment but keep the '/' separators that Keycloak uses to walk the hierarchy.
+        var escapedPath = string.Join('/', path.Trim('/').Split('/').Select(Uri.EscapeDataString));
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/group-by-path/{escapedPath}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<GroupResponseDto>();
+    }
+
+    // ── Members ───────────────────────────────────────────────────────────────
+
+    public async Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetGroupMembersAsync(string groupId, int? first = null, int? max = null, CancellationToken cancellationToken = default)
+    {
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/members{PaginationQuery(first, max)}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
+    }
+
+    private static string PaginationQuery(int? first, int? max)
+    {
+        var parameters = new List<string>();
+        if (first is not null) parameters.Add($"first={first}");
+        if (max is not null) parameters.Add($"max={max}");
+        return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
     }
 }

@@ -9,4 +9,8 @@ public sealed record CreateRealmRoleRequestDto
 
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    [JsonPropertyName("attributes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, List<string>>? Attributes { get; set; }
 }
