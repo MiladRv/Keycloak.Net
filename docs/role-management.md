@@ -133,6 +133,33 @@ await roles.DeleteRealmRoleAsync(roleName);
 `CreateRealmRoleRequestDto` also accepts `Attributes`. `RealmRoleResponseDto.Attributes` is
 filled by `GetRealmRoleAsync`; Keycloak leaves it out of list responses.
 
+### Composite Realm Roles
+
+A composite realm role can bundle realm roles and client roles from any client. A common pattern
+is a job-title role (for example `accountant`) made of fine-grained permission roles, so that
+assigning the job title grants all of them.
+
+```csharp
+// Add realm roles and client roles in one call (by id and name)
+await roles.AddRealmRoleCompositesAsync("accountant",
+[
+    new CompositeRoleRequestDto { Id = reportViewer.Id,  Name = reportViewer.Name },  // realm role
+    new CompositeRoleRequestDto { Id = invoiceApprove.Id, Name = invoiceApprove.Name } // client role
+]);
+
+// Read the realm roles, and one client's roles, that a composite contains
+var realmComposites  = await roles.GetRealmRoleCompositesAsync("accountant");
+var clientComposites = await roles.GetRealmRoleClientCompositesAsync(financeUuid, "accountant");
+
+// Remove composites
+await roles.RemoveRealmRoleCompositesAsync("accountant",
+[
+    new CompositeRoleRequestDto { Id = invoiceApprove.Id, Name = invoiceApprove.Name }
+]);
+```
+
+Users holding the composite see its contents in their [effective roles](#effective-roles).
+
 ### Realm Roles ↔ Users
 
 ```csharp
