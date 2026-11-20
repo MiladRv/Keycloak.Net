@@ -21,4 +21,7 @@ public sealed record RealmRoleResponseDto
 
     [JsonPropertyName("containerId")]
     public string ContainerId { get; set; }
+    /// <summary>Returned by Keycloak only for single-role lookups (<c>GetRealmRoleAsync</c>); null in list responses.</summary>
+    [JsonPropertyName("attributes")]
+    public Dictionary<string, List<string>>? Attributes { get; set; }
 }

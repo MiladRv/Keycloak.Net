@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Runtime.CompilerServices;
 using Keycloak.Net.Sdk.Authentications.Contracts;
 using Keycloak.Net.Sdk.Configurations;
+using Keycloak.Net.Sdk.Contracts;
 using Keycloak.Net.Sdk.Contracts.Responses;
 using Keycloak.Net.Sdk.Extensions;
 using Keycloak.Net.Sdk.Users.Contracts;
@@ -79,22 +81,100 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    private static string BuildUsersQueryString(GetUsersQueryDto? query)
+    public async Task<KeycloakBaseResponse<CountResponseDto>> GetUsersCountAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default)
+    {
+        var qs = BuildUsersQueryString(query, forCount: true);
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/count{qs}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return await response.HandleResponseAsync<CountResponseDto>();
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return long.TryParse(body.Trim(), out var count)
+            ? new KeycloakBaseResponse<CountResponseDto>(new CountResponseDto { Count = count }, true, response.StatusCode)
+            : new KeycloakFailureResponse<CountResponseDto>(response.StatusCode, $"Unexpected user count response: '{body}'");
+    }
+
+    private static string BuildUsersQueryString(GetUsersQueryDto? query, bool forCount = false)
     {
         if (query is null) return string.Empty;
 
         var parameters = new List<string>();
 
-        if (query.First.HasValue)     parameters.Add($"first={query.First.Value}");
-        if (query.Max.HasValue)       parameters.Add($"max={query.Max.Value}");
+        if (!forCount)
+        {
+            if (query.First.HasValue) parameters.Add($"first={query.First.Value}");
+            if (query.Max.HasValue)   parameters.Add($"max={query.Max.Value}");
+            if (query.Exact.HasValue) parameters.Add($"exact={query.Exact.Value.ToString().ToLowerInvariant()}");
+        }
         if (query.Search is not null) parameters.Add($"search={Uri.EscapeDataString(query.Search)}");
         if (query.Username is not null) parameters.Add($"username={Uri.EscapeDataString(query.Username)}");
         if (query.Email is not null)  parameters.Add($"email={Uri.EscapeDataString(query.Email)}");
         if (query.FirstName is not null) parameters.Add($"firstName={Uri.EscapeDataString(query.FirstName)}");
         if (query.LastName is not null)  parameters.Add($"lastName={Uri.EscapeDataString(query.LastName)}");
         if (query.Enabled.HasValue)   parameters.Add($"enabled={query.Enabled.Value.ToString().ToLowerInvariant()}");
+        if (query.EmailVerified.HasValue) parameters.Add($"emailVerified={query.EmailVerified.Value.ToString().ToLowerInvariant()}");
+        if (query.Attributes is { Count: > 0 })
+            parameters.Add($"q={Uri.EscapeDataString(BuildAttributeQuery(query.Attributes))}");
 
         return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+    }
+
+    // Keycloak's q parameter is "key1:value1 key2:value2"; a key or value containing a space or a
+    // colon is wrapped in double quotes.
+    private static string BuildAttributeQuery(IReadOnlyDictionary<string, string> attributes)
+    {
+        return string.Join(' ', attributes.Select(a => $"{QuoteAttributeTerm(a.Key, nameof(GetUsersQueryDto.Attributes))}:{QuoteAttributeTerm(a.Value, nameof(GetUsersQueryDto.Attributes))}"));
+    }
+
+    private static string QuoteAttributeTerm(string term, string paramName)
+    {
+        if (string.IsNullOrEmpty(term))
+            throw new ArgumentException("Attribute keys and values used in a user query must not be empty.", paramName);
+        if (term.Contains('"'))
+            throw new ArgumentException("Attribute keys and values used in a user query must not contain double quotes.", paramName);
+        return term.Any(c => char.IsWhiteSpace(c) || c == ':') ? $"\"{term}\"" : term;
+    }
+
+    public async IAsyncEnumerable<UserInfoResponseDto> GetAllUsersAsync(
+        GetUsersQueryDto? query = null, int pageSize = 100,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (pageSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "The page size must be greater than zero.");
+        var filter = query ?? new GetUsersQueryDto();
+        if (filter.First is < 0 || filter.Max is < 0)
+            throw new ArgumentOutOfRangeException(nameof(query), "The starting offset and total limit must not be negative.");
+
+        var offset = filter.First ?? 0;
+        var remaining = filter.Max ?? int.MaxValue;
+        while (remaining > 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var page = await GetUsersAsync(filter with { First = offset, Max = Math.Min(pageSize, remaining) }, cancellationToken);
+            if (!page.IsSuccessful)
+                throw new KeycloakException(keyCloakConfiguration.Value.RealmName, keyCloakConfiguration.Value.ClientId,
+                    $"Could not enumerate users (HTTP {(int)page.StatusCode}): {page.ErrorMessage}");
+            if (page.Response is null)
+                throw new KeycloakException(keyCloakConfiguration.Value.RealmName, keyCloakConfiguration.Value.ClientId,
+                    "The user list response did not contain a list.");
+            if (page.Response.Count == 0)
+                yield break;
+
+            var returned = 0;
+            foreach (var user in page.Response)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return user;
+                returned++;
+                remaining--;
+                if (remaining == 0) yield break;
+            }
+
+            offset = checked(offset + returned);
+        }
     }
 
     public async Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default)
@@ -120,6 +200,55 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
     {
         var uri = new Uri($"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}", UriKind.Relative);
         var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+        return await response.HandleResponseAsync();
+    }
+
+    public Task<KeycloakBaseResponse> SendVerificationEmailAsync(
+        string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default)
+        => SendActionEmailAsync(userId, "send-verify-email", null, options, cancellationToken);
+
+    public Task<KeycloakBaseResponse> SendPasswordResetEmailAsync(
+        string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default)
+        => ExecuteActionsEmailAsync(userId, [UserRequiredActions.UpdatePassword], options, cancellationToken);
+
+    public Task<KeycloakBaseResponse> ExecuteActionsEmailAsync(
+        string userId, IReadOnlyCollection<string> actions, UserActionEmailOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(actions);
+        if (actions.Count == 0 || actions.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("Provide at least one non-empty required action ID.", nameof(actions));
+
+        return SendActionEmailAsync(userId, "execute-actions-email", actions, options, cancellationToken);
+    }
+
+    private async Task<KeycloakBaseResponse> SendActionEmailAsync(
+        string userId, string endpoint, IReadOnlyCollection<string>? actions,
+        UserActionEmailOptions? options, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (options?.LifespanSeconds is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(options), "The email link lifetime must be greater than zero.");
+
+        if (options?.RedirectUri is not null && !Uri.IsWellFormedUriString(options.RedirectUri, UriKind.Absolute))
+            throw new ArgumentException("The redirect URI must be absolute.", nameof(options));
+
+        var parameters = new List<string>();
+        if (options?.ClientId is not null)
+            parameters.Add($"client_id={Uri.EscapeDataString(options.ClientId)}");
+        if (options?.RedirectUri is not null)
+            parameters.Add($"redirect_uri={Uri.EscapeDataString(options.RedirectUri)}");
+        if (options?.LifespanSeconds is not null)
+            parameters.Add($"lifespan={options.LifespanSeconds.Value}");
+
+        var query = parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{Uri.EscapeDataString(userId)}/{endpoint}{query}";
+        var request = new HttpRequestMessage(HttpMethod.Put, uri);
+        if (actions is not null)
+            request.Content = new StringContent(JsonSerializer.Serialize(actions), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         return await response.HandleResponseAsync();
     }
 

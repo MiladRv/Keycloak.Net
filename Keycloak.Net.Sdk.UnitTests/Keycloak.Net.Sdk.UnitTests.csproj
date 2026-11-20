@@ -24,6 +24,16 @@
     <ItemGroup>
         <ProjectReference Include="..\Keycloak.Net.Sdk\Keycloak.Net.Sdk.csproj" />
         <ProjectReference Include="..\Keycloak.Net.Sdk.Aspire\Keycloak.Net.Sdk.Aspire.csproj" />
+        <ProjectReference Include="..\Keycloak.Net.Sdk.AspNetCore\Keycloak.Net.Sdk.AspNetCore.csproj" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.34" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.23" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.8" />
     </ItemGroup>
 
 </Project>

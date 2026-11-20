@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Networks;
 using Keycloak.Net.Sdk.Configurations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +26,13 @@ namespace Keycloak.Net.Sdk.IntegrationTests;
 public class KeycloakFixture : IAsyncLifetime
 {
     private KeycloakContainer _container = null!;
+    private INetwork _network = null!;
+    private IContainer _smtp = null!;
+
+    /// <summary>The Docker network Keycloak runs on, for tests that start containers Keycloak must reach.</summary>
+    public INetwork Network => _network;
+
+    public Uri MailpitUrl =>new($"http://{_smtp.Hostname}:{_smtp.GetMappedPublicPort(8025)}/");
 
     // ── Public state consumed by tests ────────────────────────────────────────
     public IServiceProvider Services          { get; private set; } = null!;
@@ -31,20 +41,35 @@ public class KeycloakFixture : IAsyncLifetime
     public string           TestGroupId       { get; private set; } = null!;
     public string           TestRealmRoleId   { get; private set; } = null!;
     public string           SdkClientUuid     { get; private set; } = null!;
+    public string           SecondaryTestUserId { get; private set; } = null!;
     public const string     TestRoleName      = "sdk-test-role";
     public const string     TestRealmRoleName = "sdk-test-realm-role";
     public const string     TestGroupName     = "sdk-test-group";
     public const string     TestUsername      = "sdk-test-user";
     public const string     TestPassword      = "Test@1234";
     public const string     Realm             = "sdk-integration";
+    public const string     SecondaryRealm    = "sdk-secondary";
     public const string     SdkClientId       = "sdk-client";
+    public const string     KeycloakImage     = "quay.io/keycloak/keycloak:26.7.2";
 
     private const string AdminUsername = "admin";
     private const string AdminPassword = "admin";
 
     public async Task InitializeAsync()
     {
-        _container = new KeycloakBuilder().Build();
+        _network = new NetworkBuilder().Build();
+        await _network.CreateAsync();
+        _smtp = new ContainerBuilder("axllent/mailpit:v1.31.4")
+            .WithNetwork(_network)
+            .WithNetworkAliases("smtp")
+            .WithPortBinding(8025, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(request => request.ForPort(8025)))
+            .Build();
+        await _smtp.StartAsync();
+
+        // Pinned to a current Keycloak release; the Testcontainers default (21.1) predates
+        // admin endpoints the SDK uses, such as GET /groups/{id}/children (Keycloak 23+).
+        _container = new KeycloakBuilder(KeycloakImage).WithNetwork(_network).Build();
         await _container.StartAsync();
 
         var baseAddress = _container.GetBaseAddress().TrimEnd('/');
@@ -88,10 +113,35 @@ public class KeycloakFixture : IAsyncLifetime
 
         var services = new ServiceCollection();
         services.AddKeycloak(BuildConfigurationFrom(config));
+        services.AddKeycloak("primary", BuildConfigurationFrom(config).GetSection("keycloak"));
+
+        await CreateRealmAsync(http, adminToken, SecondaryRealm);
+        var secondaryClient = await CreateClientAsync(http, adminToken, SecondaryRealm, SdkClientId);
+        var secondarySecret = await GetClientSecretAsync(http, adminToken, SecondaryRealm, secondaryClient);
+        await AssignRealmAdminToServiceAccountAsync(http, adminToken, SecondaryRealm, secondaryClient, SdkClientId);
+        SecondaryTestUserId = await CreateTestUserAsync(http, adminToken, SecondaryRealm, TestUsername, TestPassword);
+        services.AddKeycloak("secondary", settings =>
+        {
+            settings.ServerUrl = baseAddress + "/";
+            settings.RealmName = SecondaryRealm;
+            settings.ClientId = SdkClientId;
+            settings.ClientSecret = secondarySecret;
+            settings.ClientUuid = secondaryClient;
+            settings.AdminUsername = AdminUsername;
+            settings.AdminPassword = AdminPassword;
+            settings.NumberOfRetries = 1;
+            settings.DelayBetweenRetryRequestsInSeconds = 1;
+        });
         Services = services.BuildServiceProvider();
     }
 
-    public async Task DisposeAsync() => await _container.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        if (Services is IAsyncDisposable services) await services.DisposeAsync();
+        if (_container is not null) await _container.DisposeAsync();
+        if (_smtp is not null) await _smtp.DisposeAsync();
+        if (_network is not null) await _network.DisposeAsync();
+    }
 
     // ── Admin API helpers ─────────────────────────────────────────────────────
 
@@ -113,8 +163,38 @@ public class KeycloakFixture : IAsyncLifetime
     private static async Task CreateRealmAsync(HttpClient http, string token, string realm)
     {
         var req = AuthorizedPost("admin/realms", token,
-            new { realm, enabled = true });
+            new
+            {
+                realm,
+                enabled = true,
+                smtpServer = new { host = "smtp", port = "1025", from = "sdk@example.test" }
+            });
         (await http.SendAsync(req)).EnsureSuccessStatusCode();
+
+        await EnableUnmanagedUserAttributesAsync(http, token, realm);
+    }
+
+    /// <summary>
+    /// Keycloak 24+ enforces the declarative user profile and silently drops user attributes that
+    /// are not declared in it. Allow free-form attributes, as an application storing its own
+    /// user attributes through the SDK would.
+    /// </summary>
+    private static async Task EnableUnmanagedUserAttributesAsync(HttpClient http, string token, string realm)
+    {
+        var get = new HttpRequestMessage(HttpMethod.Get, $"admin/realms/{realm}/users/profile");
+        get.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await http.SendAsync(get);
+        resp.EnsureSuccessStatusCode();
+
+        var profile = System.Text.Json.Nodes.JsonNode.Parse(await resp.Content.ReadAsStringAsync())!.AsObject();
+        profile["unmanagedAttributePolicy"] = "ENABLED";
+
+        var put = new HttpRequestMessage(HttpMethod.Put, $"admin/realms/{realm}/users/profile")
+        {
+            Content = new StringContent(profile.ToJsonString(), Encoding.UTF8, "application/json")
+        };
+        put.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        (await http.SendAsync(put)).EnsureSuccessStatusCode();
     }
 
     private static async Task<string> CreateClientAsync(HttpClient http, string token, string realm, string clientId)
@@ -206,6 +286,12 @@ public class KeycloakFixture : IAsyncLifetime
             {
                 username,
                 enabled = true,
+                // Keycloak 24+ requires a complete profile (email, first and last name) before it
+                // issues tokens; without them the password grant fails with "Account is not fully set up".
+                email         = $"{username}@example.test",
+                emailVerified = true,
+                firstName     = "Sdk",
+                lastName      = "Tester",
                 credentials = new[] { new { type = "password", value = password, temporary = false } }
             });
         var resp = await http.SendAsync(req);

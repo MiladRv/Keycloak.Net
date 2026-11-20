@@ -1,5 +1,13 @@
+using Keycloak.Net.Sdk.IdentityProviders;
+using Keycloak.Net.Sdk.IdentityProviders.Contracts;
+using Keycloak.Net.Sdk.UserFederation;
+using Keycloak.Net.Sdk.UserFederation.Contracts;
 using Keycloak.Net.Sdk.Authentications;
 using Keycloak.Net.Sdk.Authentications.Contracts;
+using Keycloak.Net.Sdk.Authorization;
+using Keycloak.Net.Sdk.Authorization.Contracts;
+using Keycloak.Net.Sdk.Events;
+using Keycloak.Net.Sdk.Events.Contracts;
 using Keycloak.Net.Sdk.Clients;
 using Keycloak.Net.Sdk.Clients.Contracts;
 using Keycloak.Net.Sdk.Contracts;
@@ -19,7 +27,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Keycloak.Net.Sdk.Configurations;
 
-public static class ServiceRegistrations
+public static partial class ServiceRegistrations
 {
     public static IServiceCollection AddKeycloak(this IServiceCollection services, IConfiguration configuration, Action<KeycloakConfiguration>? configure = null)
     {
@@ -64,6 +72,10 @@ public static class ServiceRegistrations
         services.AddScoped<IClientManagement, ClientManagement>();
         services.AddScoped<IGroupManagement, GroupManagement>();
         services.AddScoped<IUserSessionManagement, UserSessionManagement>();
+        services.AddScoped<IAuthorizationManagement, AuthorizationManagement>();
+        services.AddScoped<IEventManagement, EventManagement>();
+        services.AddScoped<IIdentityProviderManagement, IdentityProviderManagement>();
+        services.AddScoped<IUserFederationManagement, UserFederationManagement>();
 
         return services;
     }

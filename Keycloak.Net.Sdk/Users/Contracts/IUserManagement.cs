@@ -10,9 +10,16 @@ public interface IUserManagement
     Task<KeycloakBaseResponse<UserInfoResponseDto>> GetUserAsync(string id, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<List<UserInfoResponseDto>>> GetUsersAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default);
+    /// <summary>Counts users matching the query's filters. First, Max and Exact are ignored.</summary>
+    Task<KeycloakBaseResponse<CountResponseDto>> GetUsersCountAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default);
+    /// <summary>Streams users across pages. Query.Max limits the total number returned.</summary>
+    IAsyncEnumerable<UserInfoResponseDto> GetAllUsersAsync(GetUsersQueryDto? query = null, int pageSize = 100, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> EnableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DisableUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> SetUserPasswordAsync(string userId, string password, bool temporary = false, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> SendVerificationEmailAsync(string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> SendPasswordResetEmailAsync(string userId, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
+    Task<KeycloakBaseResponse> ExecuteActionsEmailAsync(string userId, IReadOnlyCollection<string> actions, UserActionEmailOptions? options = null, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse> UpdateUserAsync(string userId, UpdateUserRequestDto request, CancellationToken cancellationToken = default);
     Task<KeycloakBaseResponse<Dictionary<string, List<string>>>> GetUserAttributesAsync(string userId, CancellationToken cancellationToken = default);

@@ -31,6 +31,9 @@ if (result.IsSuccessful)
 var token = await users.SigninAsync("john.doe", "Secret@123");
 ```
 
+On Keycloak 24 and later the user needs a complete profile (by default: email, first name and
+last name). Otherwise Keycloak refuses to issue tokens with "Account is not fully set up".
+
 ## Get User(s)
 
 ```csharp
@@ -47,6 +50,68 @@ var page = await users.GetUsersAsync(new GetUsersQueryDto
     Search = "john"
 });
 ```
+
+`GetUsersQueryDto` also has `Username`, `Email`, `FirstName`, `LastName`, `Enabled` and
+`EmailVerified` filters. Set `Exact = true` to match `Username`, `Email`, `FirstName` and
+`LastName` exactly instead of as substrings.
+
+## Search by Attribute
+
+`Attributes` returns only users that have **every** listed attribute with exactly that value
+(Keycloak's `q` parameter). This is how to find, for example, everyone who works in one branch:
+
+```csharp
+var tehranStaff = await users.GetUsersAsync(new GetUsersQueryDto
+{
+    Attributes = new Dictionary<string, string>
+    {
+        ["company_id"] = "1",
+        ["branch_id"]  = "12"
+    },
+    Max = 50
+});
+```
+
+Keys and values may contain spaces or colons; the SDK quotes them for you. They must not be empty
+or contain double quotes (an `ArgumentException` is thrown). Attribute search can be combined
+with the other filters, with paging, and with `GetAllUsersAsync`.
+
+On Keycloak 24+ the attributes must actually be stored on the user. See [Attributes](#attributes).
+
+## Count Users
+
+```csharp
+var total   = await users.GetUsersCountAsync();
+var enabled = await users.GetUsersCountAsync(new GetUsersQueryDto { Enabled = true });
+var branch  = await users.GetUsersCountAsync(new GetUsersQueryDto
+{
+    Attributes = new Dictionary<string, string> { ["branch_id"] = "12" }
+});
+
+long count = branch.Response.Count;
+```
+
+The count uses the same filters as `GetUsersAsync`. `First`, `Max` and `Exact` are ignored,
+because Keycloak's count endpoint does not support them.
+
+## Stream Users
+
+`GetAllUsersAsync` fetches pages on demand and yields users one at a time:
+
+```csharp
+await foreach (var user in users.GetAllUsersAsync(
+    new GetUsersQueryDto { Enabled = true }, pageSize: 100,
+    cancellationToken: cancellationToken))
+{
+    await ProcessUserAsync(user, cancellationToken);
+}
+```
+
+Filters are applied to every request. `First` selects the starting offset, and `Max` limits the total number of users returned across all pages. With no `Max`, enumeration continues until Keycloak returns an empty page, including when a server returns fewer users than the requested page size. `Max = 0` returns no users without making a request.
+
+Only the current page is held in memory. Breaking out of the loop prevents further page requests. A failed page throws `KeycloakException` with the HTTP status and Keycloak error; previously yielded users have already been delivered to the caller. Cancellation can be passed to the method or through `WithCancellation`.
+
+Pagination uses offsets, so concurrent changes to the user list can affect which users are returned. It does not provide a snapshot of the realm.
 
 ## Update
 
@@ -78,6 +143,28 @@ actions, etc.) intact instead of it getting wiped out.
 await users.SetUserPasswordAsync(userId, "NewPass@456", temporary: false);
 ```
 
+## User Emails
+
+Keycloak sends these emails using the realm's SMTP settings. The user must have an email address.
+
+```csharp
+await users.SendVerificationEmailAsync(userId);
+await users.SendPasswordResetEmailAsync(userId);
+
+await users.ExecuteActionsEmailAsync(userId,
+    [UserRequiredActions.UpdateProfile, UserRequiredActions.UpdatePassword],
+    new UserActionEmailOptions
+    {
+        ClientId = "my-app",
+        RedirectUri = "https://app.example.com/account",
+        LifespanSeconds = 900
+    });
+```
+
+The redirect URI must be allowed by the selected client's configuration. Leave options unset to use Keycloak's defaults. Password reset uses `execute-actions-email` with `UPDATE_PASSWORD`, rather than the deprecated password reset email endpoint. Custom required action IDs are supported.
+
+These methods return `KeycloakBaseResponse`, including the status and error body when sending fails. They also accept a `CancellationToken`.
+
 ## Attributes
 
 ```csharp
@@ -86,6 +173,12 @@ await users.SetUserAttributeAsync(userId, "department", "engineering");
 var attributes = await users.GetUserAttributesAsync(userId);
 // attributes.Response["department"][0] == "engineering"
 ```
+
+> **Keycloak 24 and later:** the declarative user profile is always on, and attributes that are
+> not declared in it are **silently dropped** - `SetUserAttributeAsync` still returns success.
+> Either declare each attribute in *Realm settings → User profile*, or set
+> *Unmanaged attributes* to **Enabled** (`unmanagedAttributePolicy: ENABLED` in the realm's user
+> profile config).
 
 ## Delete
 
