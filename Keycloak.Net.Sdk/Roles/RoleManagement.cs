@@ -143,13 +143,16 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse<RealmRoleResponseDto>> GetRealmRoleAsync(string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
+        var requestUrl = RealmRoleUrl(roleName);
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
 
         return await response.HandleResponseAsync<RealmRoleResponseDto>();
     }
+
+    public Task<KeycloakBaseResponse> UpdateRealmRoleAsync(string roleName, UpdateRealmRoleRequestDto requestDto, CancellationToken cancellationToken = default)
+        => SendAsync(HttpMethod.Put, RealmRoleUrl(roleName), JsonContent(requestDto), cancellationToken);
 
     public async Task<KeycloakBaseResponse> CreateRealmRoleAsync(CreateRealmRoleRequestDto requestDto, CancellationToken cancellationToken = default)
     {
@@ -167,7 +170,7 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
     public async Task<KeycloakBaseResponse> DeleteRealmRoleAsync(string roleName, CancellationToken cancellationToken = default)
     {
-        var requestUrl = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{roleName}";
+        var requestUrl = RealmRoleUrl(roleName);
         var request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -262,4 +265,54 @@ public sealed class RoleManagement(IHttpClientFactory httpClientFactory, IOption
 
         return await response.HandleResponseAsync();
     }
+
+    // ── Client Role ↔ Group ───────────────────────────────────────────────────
+
+    private string GroupClientRoleMappingsUrl(string clientUuid, string groupId) =>
+        $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/clients/{Uri.EscapeDataString(clientUuid)}";
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetGroupClientRolesAsync(string groupId, CancellationToken cancellationToken = default)
+        => GetGroupClientRolesAsync(ConfiguredClientUuid, groupId, cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetGroupClientRolesAsync(string clientUuid, string groupId, CancellationToken cancellationToken = default)
+        => GetAsync<List<ClientRoleResponseDto>>(GroupClientRoleMappingsUrl(clientUuid, groupId), cancellationToken);
+
+    public Task<KeycloakBaseResponse> AssignClientRoleToGroupAsync(string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
+        => AssignClientRoleToGroupAsync(ConfiguredClientUuid, groupId, roleId, roleName, cancellationToken);
+
+    public Task<KeycloakBaseResponse> AssignClientRoleToGroupAsync(string clientUuid, string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
+        => SendAsync(HttpMethod.Post, GroupClientRoleMappingsUrl(clientUuid, groupId),
+            JsonContent(new[] { new { id = roleId, name = roleName } }), cancellationToken);
+
+    public Task<KeycloakBaseResponse> RemoveClientRoleFromGroupAsync(string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
+        => RemoveClientRoleFromGroupAsync(ConfiguredClientUuid, groupId, roleId, roleName, cancellationToken);
+
+    public Task<KeycloakBaseResponse> RemoveClientRoleFromGroupAsync(string clientUuid, string groupId, string roleId, string roleName, CancellationToken cancellationToken = default)
+        => SendAsync(HttpMethod.Delete, GroupClientRoleMappingsUrl(clientUuid, groupId),
+            JsonContent(new[] { new { id = roleId, name = roleName } }), cancellationToken);
+
+    // ── Effective roles ───────────────────────────────────────────────────────
+
+    public Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetUserEffectiveRealmRolesAsync(string userId, CancellationToken cancellationToken = default)
+        => GetAsync<List<RealmRoleResponseDto>>(
+            $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/{userId}/role-mappings/realm/composite", cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetUserEffectiveClientRolesAsync(string userId, CancellationToken cancellationToken = default)
+        => GetUserEffectiveClientRolesAsync(ConfiguredClientUuid, userId, cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetUserEffectiveClientRolesAsync(string clientUuid, string userId, CancellationToken cancellationToken = default)
+        => GetAsync<List<ClientRoleResponseDto>>($"{UserClientRoleMappingsUrl(clientUuid, userId)}/composite", cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<RealmRoleResponseDto>>> GetGroupEffectiveRealmRolesAsync(string groupId, CancellationToken cancellationToken = default)
+        => GetAsync<List<RealmRoleResponseDto>>(
+            $"admin/realms/{keyCloakConfiguration.Value.RealmName}/groups/{groupId}/role-mappings/realm/composite", cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetGroupEffectiveClientRolesAsync(string groupId, CancellationToken cancellationToken = default)
+        => GetGroupEffectiveClientRolesAsync(ConfiguredClientUuid, groupId, cancellationToken);
+
+    public Task<KeycloakBaseResponse<List<ClientRoleResponseDto>>> GetGroupEffectiveClientRolesAsync(string clientUuid, string groupId, CancellationToken cancellationToken = default)
+        => GetAsync<List<ClientRoleResponseDto>>($"{GroupClientRoleMappingsUrl(clientUuid, groupId)}/composite", cancellationToken);
+
+    private string RealmRoleUrl(string roleName) =>
+        $"admin/realms/{keyCloakConfiguration.Value.RealmName}/roles/{Uri.EscapeDataString(roleName)}";
 }

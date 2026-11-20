@@ -117,9 +117,21 @@ await roles.CreateRealmRoleAsync(new CreateRealmRoleRequestDto
     Description = "Full access role"
 });
 
+// Update a realm role. Name and description are replaced. Attributes are replaced only
+// when Attributes is not null; pass an empty dictionary to clear them.
+await roles.UpdateRealmRoleAsync(roleName, new UpdateRealmRoleRequestDto
+{
+    Name        = roleName,
+    Description = "Full access role",
+    Attributes  = new() { ["scope_level"] = ["company"] }
+});
+
 // Delete a realm role
 await roles.DeleteRealmRoleAsync(roleName);
 ```
+
+`CreateRealmRoleRequestDto` also accepts `Attributes`. `RealmRoleResponseDto.Attributes` is
+filled by `GetRealmRoleAsync`; Keycloak leaves it out of list responses.
 
 ### Realm Roles ↔ Users
 
@@ -146,3 +158,45 @@ await roles.AssignRealmRoleToGroupAsync(groupId, roleId, roleName);
 // Remove a realm role from a group
 await roles.RemoveRealmRoleFromGroupAsync(groupId, roleId, roleName);
 ```
+
+## Client Roles ↔ Groups
+
+Like the other client-role methods, each one has an overload without `clientUuid` that uses the
+configured client.
+
+```csharp
+// Get a group's roles on a client
+var groupClientRoles = await roles.GetGroupClientRolesAsync(financeUuid, groupId);
+
+// Assign a client role to a group: every member of the group (and of its child groups) gets it
+await roles.AssignClientRoleToGroupAsync(financeUuid, groupId, roleId, roleName);
+
+// Remove a client role from a group
+await roles.RemoveClientRoleFromGroupAsync(financeUuid, groupId, roleId, roleName);
+```
+
+## Effective Roles
+
+The methods above return roles mapped **directly**. Effective roles also include roles that come
+from group membership and from composite roles, which is what ends up in the user's token.
+
+```csharp
+// Everything a user effectively has
+var realmRoles  = await roles.GetUserEffectiveRealmRolesAsync(userId);
+var clientRoles = await roles.GetUserEffectiveClientRolesAsync(financeUuid, userId);
+
+// What a group effectively grants
+var groupRealmRoles  = await roles.GetGroupEffectiveRealmRolesAsync(groupId);
+var groupClientRoles = await roles.GetGroupEffectiveClientRolesAsync(financeUuid, groupId);
+```
+
+| Method | Direct mappings | Via groups | Via parent groups | Via composites |
+|---|---|---|---|---|
+| `GetUserEffectiveRealmRolesAsync` | ✓ | ✓ | ✓ | ✓ |
+| `GetUserEffectiveClientRolesAsync` | ✓ | ✓ | ✓ | ✓ |
+| `GetGroupEffectiveRealmRolesAsync` | ✓ | – | ✓ | ✓ |
+| `GetGroupEffectiveClientRolesAsync` | ✓ | – | ✗ | ✓ |
+
+Keycloak's group-level client-role composite endpoint does not include roles from parent groups,
+while the realm-level one does. To answer "what does a member of this group get on this client?",
+check a member with `GetUserEffectiveClientRolesAsync`.

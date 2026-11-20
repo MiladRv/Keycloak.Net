@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Group hierarchy: `CreateChildGroupAsync`, `GetChildGroupsAsync` (paginated, Keycloak 23+) and `GetGroupByPathAsync`.
+- `GetGroupMembersAsync` with `first`/`max` pagination.
+- Group attributes: `CreateGroupRequestDto.Attributes`, `UpdateGroupRequestDto.Attributes` and `GroupResponseDto.Attributes`; `GroupResponseDto` also exposes `ParentId` and `SubGroupCount`.
+- Realm role attributes (`CreateRealmRoleRequestDto.Attributes`, `RealmRoleResponseDto.Attributes`) and `UpdateRealmRoleAsync`.
+- Client roles on groups: `GetGroupClientRolesAsync`, `AssignClientRoleToGroupAsync`, `RemoveClientRoleFromGroupAsync`, each with a `clientUuid` overload.
+- Effective roles: `GetUserEffectiveRealmRolesAsync`, `GetUserEffectiveClientRolesAsync`, `GetGroupEffectiveRealmRolesAsync`, `GetGroupEffectiveClientRolesAsync`.
 - Client-role operations can target any client in the realm: every client-role method in `IRoleManagement` has an overload taking `clientUuid` as its first parameter. The existing overloads keep using the configured `ClientUuid`.
 - Client role CRUD: `GetClientRoleAsync`, `CreateClientRoleAsync`, `UpdateClientRoleAsync`, `DeleteClientRoleAsync`, with role attributes.
 - `GetUserClientRolesAsync` (a user's client-role mappings) and `GetClientRoleUsersAsync` (users holding a client role, with `first`/`max` pagination).
@@ -20,6 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A develop test workflow that builds all targets and runs unit and integration tests without publishing packages.
 
 ### Changed
+- Custom implementations of `IGroupManagement` must implement the new hierarchy and member methods.
+- Realm role names are now URL-escaped in request paths.
+- Integration tests run against Keycloak 26.7.2 instead of the Testcontainers default (21.1). The test realm enables unmanaged user attributes and the test user has a complete profile, as Keycloak 24+ requires.
 - Custom implementations of `IRoleManagement` must implement the new client-role overloads and methods.
 - Client role names and client UUIDs are now URL-escaped in request paths, so names containing `/`, `#`, `?` or spaces address the right role.
 - Custom implementations of `IUserManagement` must implement the new email and user streaming methods. Applications using the SDK's registered `UserManagement` do not need DI changes.

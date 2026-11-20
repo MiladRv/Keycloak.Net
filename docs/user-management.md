@@ -31,6 +31,9 @@ if (result.IsSuccessful)
 var token = await users.SigninAsync("john.doe", "Secret@123");
 ```
 
+On Keycloak 24 and later the user needs a complete profile (by default: email, first name and
+last name). Otherwise Keycloak refuses to issue tokens with "Account is not fully set up".
+
 ## Get User(s)
 
 ```csharp
@@ -127,6 +130,12 @@ await users.SetUserAttributeAsync(userId, "department", "engineering");
 var attributes = await users.GetUserAttributesAsync(userId);
 // attributes.Response["department"][0] == "engineering"
 ```
+
+> **Keycloak 24 and later:** the declarative user profile is always on, and attributes that are
+> not declared in it are **silently dropped** - `SetUserAttributeAsync` still returns success.
+> Either declare each attribute in *Realm settings → User profile*, or set
+> *Unmanaged attributes* to **Enabled** (`unmanagedAttributePolicy: ENABLED` in the realm's user
+> profile config).
 
 ## Delete
 
