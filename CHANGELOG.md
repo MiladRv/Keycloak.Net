@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- User search by attribute: `GetUsersQueryDto.Attributes` (sent as Keycloak's `q` parameter; terms with spaces or colons are quoted). Also `Exact` and `EmailVerified` filters.
+- `GetUsersCountAsync` returns the number of users matching a query, as `CountResponseDto`.
 - Group hierarchy: `CreateChildGroupAsync`, `GetChildGroupsAsync` (paginated, Keycloak 23+) and `GetGroupByPathAsync`.
 - `GetGroupMembersAsync` with `first`/`max` pagination.
 - Group attributes: `CreateGroupRequestDto.Attributes`, `UpdateGroupRequestDto.Attributes` and `GroupResponseDto.Attributes`; `GroupResponseDto` also exposes `ParentId` and `SubGroupCount`.
@@ -31,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Integration tests run against Keycloak 26.7.2 instead of the Testcontainers default (21.1). The test realm enables unmanaged user attributes and the test user has a complete profile, as Keycloak 24+ requires.
 - Custom implementations of `IRoleManagement` must implement the new client-role overloads and methods.
 - Client role names and client UUIDs are now URL-escaped in request paths, so names containing `/`, `#`, `?` or spaces address the right role.
-- Custom implementations of `IUserManagement` must implement the new email and user streaming methods. Applications using the SDK's registered `UserManagement` do not need DI changes.
+- Custom implementations of `IUserManagement` must implement the new email, user streaming and `GetUsersCountAsync` methods. Applications using the SDK's registered `UserManagement` do not need DI changes.
 
 ## [2.0.0] - 2026-10-04
 
