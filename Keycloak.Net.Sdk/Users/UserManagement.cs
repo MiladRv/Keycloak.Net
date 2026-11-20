@@ -81,22 +81,61 @@ public sealed class UserManagement(IHttpClientFactory httpClientFactory, IOption
         return await response.HandleResponseAsync<List<UserInfoResponseDto>>();
     }
 
-    private static string BuildUsersQueryString(GetUsersQueryDto? query)
+    public async Task<KeycloakBaseResponse<CountResponseDto>> GetUsersCountAsync(GetUsersQueryDto? query = null, CancellationToken cancellationToken = default)
+    {
+        var qs = BuildUsersQueryString(query, forCount: true);
+        var uri = $"admin/realms/{keyCloakConfiguration.Value.RealmName}/users/count{qs}";
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return await response.HandleResponseAsync<CountResponseDto>();
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return long.TryParse(body.Trim(), out var count)
+            ? new KeycloakBaseResponse<CountResponseDto>(new CountResponseDto { Count = count }, true, response.StatusCode)
+            : new KeycloakFailureResponse<CountResponseDto>(response.StatusCode, $"Unexpected user count response: '{body}'");
+    }
+
+    private static string BuildUsersQueryString(GetUsersQueryDto? query, bool forCount = false)
     {
         if (query is null) return string.Empty;
 
         var parameters = new List<string>();
 
-        if (query.First.HasValue)     parameters.Add($"first={query.First.Value}");
-        if (query.Max.HasValue)       parameters.Add($"max={query.Max.Value}");
+        if (!forCount)
+        {
+            if (query.First.HasValue) parameters.Add($"first={query.First.Value}");
+            if (query.Max.HasValue)   parameters.Add($"max={query.Max.Value}");
+            if (query.Exact.HasValue) parameters.Add($"exact={query.Exact.Value.ToString().ToLowerInvariant()}");
+        }
         if (query.Search is not null) parameters.Add($"search={Uri.EscapeDataString(query.Search)}");
         if (query.Username is not null) parameters.Add($"username={Uri.EscapeDataString(query.Username)}");
         if (query.Email is not null)  parameters.Add($"email={Uri.EscapeDataString(query.Email)}");
         if (query.FirstName is not null) parameters.Add($"firstName={Uri.EscapeDataString(query.FirstName)}");
         if (query.LastName is not null)  parameters.Add($"lastName={Uri.EscapeDataString(query.LastName)}");
         if (query.Enabled.HasValue)   parameters.Add($"enabled={query.Enabled.Value.ToString().ToLowerInvariant()}");
+        if (query.EmailVerified.HasValue) parameters.Add($"emailVerified={query.EmailVerified.Value.ToString().ToLowerInvariant()}");
+        if (query.Attributes is { Count: > 0 })
+            parameters.Add($"q={Uri.EscapeDataString(BuildAttributeQuery(query.Attributes))}");
 
         return parameters.Count > 0 ? "?" + string.Join("&", parameters) : string.Empty;
+    }
+
+    // Keycloak's q parameter is "key1:value1 key2:value2"; a key or value containing a space or a
+    // colon is wrapped in double quotes.
+    private static string BuildAttributeQuery(IReadOnlyDictionary<string, string> attributes)
+    {
+        return string.Join(' ', attributes.Select(a => $"{QuoteAttributeTerm(a.Key, nameof(GetUsersQueryDto.Attributes))}:{QuoteAttributeTerm(a.Value, nameof(GetUsersQueryDto.Attributes))}"));
+    }
+
+    private static string QuoteAttributeTerm(string term, string paramName)
+    {
+        if (string.IsNullOrEmpty(term))
+            throw new ArgumentException("Attribute keys and values used in a user query must not be empty.", paramName);
+        if (term.Contains('"'))
+            throw new ArgumentException("Attribute keys and values used in a user query must not contain double quotes.", paramName);
+        return term.Any(c => char.IsWhiteSpace(c) || c == ':') ? $"\"{term}\"" : term;
     }
 
     public async IAsyncEnumerable<UserInfoResponseDto> GetAllUsersAsync(

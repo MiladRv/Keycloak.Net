@@ -126,7 +126,7 @@ Or use `IGroupManagement` to organize users into groups:
 ## Features
 
 - **Authentication**: sign up / sign in users, service-account token management
-- **User management**: get, enable/disable, set password, delete; list/delete credentials
+- **User management**: get, search (including by attribute), count, enable/disable, set password, delete; list/delete credentials
 - **Role management**: client roles on any client in the realm (CRUD, assign/remove to users and groups, list a role's users); realm roles (CRUD with attributes, assign/remove to users and groups); composite client roles; effective (inherited) roles for users and groups
 - **Client management**: get, create, delete clients; enable service accounts; manage client scopes, default/optional scope assignment, and protocol mappers
 - **Realm management**: create, get, update, delete realms
@@ -142,7 +142,7 @@ Or use `IGroupManagement` to organize users into groups:
 
 | Interface | Responsibilities |
 |-----------|-----------------|
-| `IUserManagement` | Sign up, sign in, get, enable/disable, set password, delete; list/delete credentials |
+| `IUserManagement` | Sign up, sign in, get, search by attribute, count, enable/disable, set password, delete; list/delete credentials |
 | `IRoleManagement` | Client roles on any client (CRUD, user/group mappings, composites), realm roles (CRUD, user/group mappings), effective roles |
 | `IClientManagement` | Get, create, delete clients; enable service accounts; client scopes & protocol mappers CRUD; default/optional client scope assignment |
 | `IRealmManagement` | Create realms |

@@ -16,4 +16,19 @@ public sealed record GetUsersQueryDto
     public string? FirstName { get; init; }
     public string? LastName { get; init; }
     public bool? Enabled { get; init; }
+    public bool? EmailVerified { get; init; }
+
+    /// <summary>
+    /// When true, <see cref="Username"/>, <see cref="Email"/>, <see cref="FirstName"/> and
+    /// <see cref="LastName"/> must match exactly instead of as substrings.
+    /// Not applied by <c>GetUsersCountAsync</c> (Keycloak's count endpoint does not support it).
+    /// </summary>
+    public bool? Exact { get; init; }
+
+    /// <summary>
+    /// Only return users that have every one of these attributes with exactly this value
+    /// (sent as Keycloak's <c>q</c> parameter), for example <c>{ ["branch_id"] = "12" }</c>.
+    /// Keys and values must not contain double quotes.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Attributes { get; init; }
 }

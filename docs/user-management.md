@@ -51,6 +51,49 @@ var page = await users.GetUsersAsync(new GetUsersQueryDto
 });
 ```
 
+`GetUsersQueryDto` also has `Username`, `Email`, `FirstName`, `LastName`, `Enabled` and
+`EmailVerified` filters. Set `Exact = true` to match `Username`, `Email`, `FirstName` and
+`LastName` exactly instead of as substrings.
+
+## Search by Attribute
+
+`Attributes` returns only users that have **every** listed attribute with exactly that value
+(Keycloak's `q` parameter). This is how to find, for example, everyone who works in one branch:
+
+```csharp
+var tehranStaff = await users.GetUsersAsync(new GetUsersQueryDto
+{
+    Attributes = new Dictionary<string, string>
+    {
+        ["company_id"] = "1",
+        ["branch_id"]  = "12"
+    },
+    Max = 50
+});
+```
+
+Keys and values may contain spaces or colons; the SDK quotes them for you. They must not be empty
+or contain double quotes (an `ArgumentException` is thrown). Attribute search can be combined
+with the other filters, with paging, and with `GetAllUsersAsync`.
+
+On Keycloak 24+ the attributes must actually be stored on the user. See [Attributes](#attributes).
+
+## Count Users
+
+```csharp
+var total   = await users.GetUsersCountAsync();
+var enabled = await users.GetUsersCountAsync(new GetUsersQueryDto { Enabled = true });
+var branch  = await users.GetUsersCountAsync(new GetUsersQueryDto
+{
+    Attributes = new Dictionary<string, string> { ["branch_id"] = "12" }
+});
+
+long count = branch.Response.Count;
+```
+
+The count uses the same filters as `GetUsersAsync`. `First`, `Max` and `Exact` are ignored,
+because Keycloak's count endpoint does not support them.
+
 ## Stream Users
 
 `GetAllUsersAsync` fetches pages on demand and yields users one at a time:
